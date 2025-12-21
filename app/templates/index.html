@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: light; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body { margin: 0; padding: 16px; background: #f7f7f9; color: #111827; }
+    h1 { margin: 0 0 12px 0; }
+    section { background: #fff; padding: 14px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); margin-bottom: 12px; }
+    label { display: block; font-size: 13px; color: #4b5563; margin-bottom: 4px; }
+    input { width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; }
+    button { cursor: pointer; background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 12px; font-weight: 600; }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    .sets-nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 4px; }
+    .set-pill { padding: 8px 12px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-weight: 600; color: #111827; }
+    .set-pill.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .set-pill.empty { color: #6b7280; border-style: dashed; }
+    .set-pill.empty.active { background: #2563eb; color: #fff; border-color: #2563eb; border-style: solid; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-top: 12px; }
+    .card-tile { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px; }
+    .card-header { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .badge { background: #eef2ff; color: #4338ca; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+    .img-box { width: 100%; aspect-ratio: 16 / 10; min-height: 220px; border: 1px dashed #e5e7eb; border-radius: 10px; background: linear-gradient(135deg,#f8fafc,#eef2ff); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .img-box img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .small { font-size: 13px; color: #4b5563; }
+    .links { font-size: 13px; color: #6b7280; }
+    .flex { display: flex; gap: 8px; align-items: center; }
+    .grid { display: grid; gap: 10px; }
+    .cols-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .cols-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .leader-toggle { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; padding: 4px 10px; font-size: 12px; font-weight: 500; border-radius: 6px; transition: all 0.15s ease; }
+    .leader-toggle:hover { background: #e5e7eb; color: #374151; }
+    .leader-toggle.active { background: #fef3c7; color: #92400e; border-color: #f59e0b; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>One Piece TCG Tracker</h1>
+
+  <section>
+    <div class="flex" style="justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <div>
+        <div style="font-weight:600;">Sets</div>
+        <div id="setsNav" class="sets-nav"></div>
+      </div>
+      <div style="min-width:220px;">
+        <label for="searchTerm">Search (name/character)</label>
+        <input id="searchTerm" placeholder="Type to filter..." />
+      </div>
+      <div class="flex" style="align-self: end; gap: 8px;">
+        <button id="applyFilters">Apply</button>
+        <button class="secondary" id="resetFilters">Reset</button>
+        <button class="secondary" id="exportExcel" style="background:#10b981; color:#fff; border-color:#10b981;">📥 Export Excel</button>
+      </div>
+    </div>
+    <div id="cardsMeta" class="small" style="margin-top:6px;">Loading...</div>
+    <div id="cardsGrid" class="cards-grid" style="margin-top:10px;"></div>
+    <div class="flex" style="justify-content:flex-end; margin-top:10px;">
+      <button class="secondary" id="prevPage">Prev</button>
+      <button class="secondary" id="nextPage">Next</button>
+    </div>
+  </section>
+
+  <section>
+    <h3 style="margin-top:0;">Quick Add Card</h3>
+    <div class="grid cols-4">
+      <div>
+        <label for="createSetCode">Set Code</label>
+        <input id="createSetCode" placeholder="OP-05">
+      </div>
+      <div>
+        <label for="createCardName">Card Name</label>
+        <input id="createCardName" placeholder="Nami">
+      </div>
+      <div>
+        <label for="createCardNumber">Card Number</label>
+        <input id="createCardNumber" placeholder="OP05-100">
+      </div>
+      <div>
+        <label for="createVariant">Variant</label>
+        <input id="createVariant" placeholder="SP">
+      </div>
+    </div>
+    <div class="grid cols-4" style="margin-top:10px;">
+      <div>
+        <label for="createPrice">Avg Price ($)</label>
+        <input type="number" step="0.01" id="createPrice">
+      </div>
+      <div>
+        <label for="createRarity">Rarity Score (0-100)</label>
+        <input type="number" step="1" min="0" max="100" id="createRarity">
+      </div>
+      <div>
+        <label for="createPriority">Manual Priority</label>
+        <input type="number" min="0" id="createPriority">
+      </div>
+      <div>
+        <label for="createMarketUrl">Reference Link (PriceCharting/TCG)</label>
+        <input id="createMarketUrl" placeholder="https://...">
+        <div class="small">Optional. Leave blank to add manually.</div>
+      </div>
+      <div class="flex" style="align-items:center; gap:6px; margin-top:22px;">
+        <input type="checkbox" id="createSyncLink" checked />
+        <label for="createSyncLink" style="margin:0;">Sync image/price/variant from link after create</label>
+      </div>
+    </div>
+    <div style="margin-top:8px;">
+      <button id="createCardBtn">Create Card</button>
+      <span id="createStatus" style="margin-left:8px;font-size:13px;color:#047857;"></span>
+    </div>
+  </section>
+
+  <section>
+    <h3 style="margin-top:0;">Import Excel</h3>
+    <div class="flex">
+      <input type="file" id="excelFile" accept=".xlsx,.xls,.xlsm">
+      <input id="sheetName" placeholder="MASTER LIST" value="MASTER LIST" style="max-width:140px;">
+      <button id="importBtn">Import</button>
+      <button class="secondary" id="backfillBtn" type="button">Backfill Scores</button>
+      <span id="importStatus" style="font-size:13px;color:#047857;"></span>
+    </div>
+  </section>
+
+  <script>
+    const DEFAULT_LIMIT = {{ default_limit }};
+  </script>
+  <script src="/static/main.js"></script>
+</body>
+</html>
+
