@@ -14,8 +14,8 @@ ENV/
 *.swp
 *.swo
 
-# Database (keep for local, Render will create its own)
-*.db
+# Database - include in repo for initial data
+# *.db
 
 # Storage (uploaded images)
 storage/
