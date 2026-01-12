@@ -10,7 +10,7 @@ import pandas as pd
 from fastapi import UploadFile
 from bs4 import BeautifulSoup
 import httpx
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from ..config import Settings, get_settings
@@ -385,10 +385,17 @@ def list_cards(
     if priority_max is not None:
         query = query.filter(Card.priority_manual <= priority_max)
     
-    # Text search
+    # Text search - search across name, card_number, variant, set_code
     if search:
         search_term = f"%{search.lower()}%"
-        query = query.filter(func.lower(Card.card_name).like(search_term))
+        query = query.filter(
+            or_(
+                func.lower(Card.card_name).like(search_term),
+                func.lower(Card.card_number).like(search_term),
+                func.lower(Card.variant).like(search_term),
+                func.lower(Card.set_code).like(search_term),
+            )
+        )
     
     # Variant filter (exact match)
     if variant:
