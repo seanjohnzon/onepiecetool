@@ -287,6 +287,9 @@ User question: {user_message}"""
         "content": full_message
     })
     
+    # Get suggested cards based on query
+    suggested = get_suggested_cards(db, user_message)
+    
     try:
         response = client.messages.create(
             model="claude-3-haiku-20240307",
@@ -297,15 +300,63 @@ User question: {user_message}"""
         
         return {
             "response": response.content[0].text,
-            "error": None
+            "error": None,
+            "suggested_cards": suggested
         }
     except Exception as e:
-        # Log the error for debugging
         print(f"AI Chat Error: {e}")
         return {
             "response": f"AI Error: {str(e)}",
-            "error": str(e)
+            "error": str(e),
+            "suggested_cards": []
         }
+
+
+def get_suggested_cards(db: Session, user_message: str, limit: int = 8) -> list:
+    """Get cards matching user's query for easy adding to lot."""
+    # Extract only the user query part (after lot context if present)
+    msg = user_message.lower()
+    if "\n\n" in msg:
+        msg = msg.split("\n\n")[-1]  # Get only the actual query part
+    
+    conditions = ["price > 1"]
+    order = "flip_score DESC"
+    
+    # Character - check which character is explicitly mentioned in the query
+    for char in ["luffy", "zoro", "shanks", "ace", "nami", "law"]:
+        if char in msg:
+            conditions.append(f"LOWER(card_name) LIKE '%{char}%'")
+            break
+    
+    # Variant
+    if "manga" in msg:
+        conditions.append("LOWER(variant) LIKE '%manga%'")
+    elif "alt" in msg:
+        conditions.append("LOWER(variant) LIKE '%alternate%'")
+    
+    # Budget hints
+    if "$100" in msg or "100 dollar" in msg:
+        conditions.append("price <= 100")
+    elif "$200" in msg or "200 dollar" in msg:
+        conditions.append("price <= 200")
+    elif "$50" in msg or "50 dollar" in msg:
+        conditions.append("price <= 50")
+    
+    where = " AND ".join(conditions)
+    query = f"""
+        SELECT id, card_name, card_number, variant, price, image_url, image_path, market_url, flip_score, trend_score_sma
+        FROM cards WHERE {where} ORDER BY {order} LIMIT {limit}
+    """
+    
+    from sqlalchemy import text
+    rows = db.execute(text(query)).fetchall()
+    
+    return [
+        {"id": r[0], "card_name": r[1], "card_number": r[2], "variant": r[3], 
+         "price": r[4], "image_url": r[5] or r[6], "market_url": r[7],
+         "flip_score": r[8], "trend_score_sma": r[9]}
+        for r in rows
+    ]
 
 
 def get_quick_analysis(db: Session, analysis_type: str) -> dict:

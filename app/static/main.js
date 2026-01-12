@@ -243,6 +243,38 @@ function wireLotEvents() {
   document.getElementById("lotCardsGrid")?.addEventListener("click", e => { if (e.target.dataset.action === "remove-from-lot") removeCardFromLot(parseInt(e.target.dataset.id)); });
   document.getElementById("analyzeLotBtn")?.addEventListener("click", analyzeLot);
   document.getElementById("copyLotBtn")?.addEventListener("click", copyLotToClipboard);
+  document.getElementById("saveLotBtn")?.addEventListener("click", showSaveLotModal);
+}
+
+function showSaveLotModal() {
+  if (workingLot.length === 0) { alert("Add cards to your lot first!"); return; }
+  const name = prompt("Enter a name for this lot:", "My Lot " + new Date().toLocaleDateString());
+  if (!name) return;
+  saveLot(name);
+}
+
+async function saveLot(name) {
+  const cardIds = workingLot.map(c => c.id);
+  const btn = document.getElementById("saveLotBtn");
+  if (btn) btn.textContent = "Saving...";
+  try {
+    const res = await fetch("/cards/saved-lots", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, card_ids: cardIds })
+    });
+    if (res.ok) {
+      alert("Lot saved!");
+      if (btn) btn.textContent = "💾 Save Lot...";
+    } else {
+      const err = await res.json();
+      alert("Error: " + (err.detail || "Unknown"));
+      if (btn) btn.textContent = "💾 Save Lot...";
+    }
+  } catch (e) {
+    alert("Error: " + e.message);
+    if (btn) btn.textContent = "💾 Save Lot...";
+  }
 }
 
 async function analyzeLot() {
@@ -343,8 +375,24 @@ function formatAiResponse(t) { return escapeHtml(t).replace(/\*\*(.*?)\*\*/g,"<s
 function escapeHtml(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
 
 function renderSuggestedCards(cards) {
-  if (!cards?.length) return "";
-  return `<div class="ai-suggested-cards"><span class="small" style="color:var(--op-gold);">Suggested:</span>${cards.map(c => { const cardJson = JSON.stringify(c).replace(/'/g, "&#39;"); return '<button class="ai-card-btn" data-card=\'' + cardJson + '\' style="background:rgba(245,197,66,.2);border:1px solid var(--op-gold);border-radius:4px;padding:4px 8px;font-size:12px;color:var(--op-cream);cursor:pointer;">' + c.card_name + ' ' + (c.card_number||"") + '</button>'; }).join("")}<button class="ai-add-all-btn" data-cards='${JSON.stringify(cards).replace(/'/g, "&#39;")}'>+ Add All</button></div>`;
+  if (!cards || cards.length === 0) return "";
+  let html = '<div style="margin-top:16px;padding:12px;background:rgba(0,0,0,0.3);border-radius:8px;border:1px solid var(--op-gold);">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+  html += '<span style="font-weight:600;color:var(--op-gold);">📦 Add to Lot (' + cards.length + ' cards)</span>';
+  html += '<button class="ai-add-all-btn" data-cards=\'' + JSON.stringify(cards).replace(/'/g,"&#39;") + '\' style="padding:6px 12px;background:var(--op-gold);border:none;border-radius:4px;color:var(--op-navy);font-weight:600;cursor:pointer;">+ Add All</button>';
+  html += '</div>';
+  html += '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;">';
+  for (const c of cards) {
+    const cj = JSON.stringify(c).replace(/'/g,"&#39;");
+    html += '<div style="flex-shrink:0;width:120px;background:rgba(15,23,41,0.9);border:1px solid rgba(245,197,66,0.3);border-radius:8px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:11px;font-weight:600;color:var(--op-cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + c.card_name + '</div>';
+    html += '<div style="font-size:10px;color:var(--op-gray);">' + (c.card_number || "") + '</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:var(--op-gold);margin:6px 0;">$' + (c.price ? c.price.toFixed(2) : "?") + '</div>';
+    html += '<button class="ai-card-btn" data-card=\'' + cj + '\' style="width:100%;padding:5px;background:#22c55e;border:none;border-radius:4px;color:white;font-size:10px;font-weight:600;cursor:pointer;">+ Add</button>';
+    html += '</div>';
+  }
+  html += '</div></div>';
+  return html;
 }
 
 function wireSuggestedCardButtons() {

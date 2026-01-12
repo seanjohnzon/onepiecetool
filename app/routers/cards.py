@@ -681,6 +681,7 @@ class ChatResponse(BaseModel):
     """Response model for AI chat."""
     response: Optional[str] = None
     error: Optional[str] = None
+    suggested_cards: List[dict] = []
 
 
 @router.post("/ai/chat", response_model=ChatResponse)
