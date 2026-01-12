@@ -691,6 +691,72 @@
     </div>
   </section>
 
+  <!-- AI Chat Section -->
+  <section class="ai-chat-section" style="margin-top: 20px;">
+    <h3 style="margin-top:0;">🤖 AI CARD ANALYST</h3>
+    <div class="small" style="color: var(--op-cream); margin-bottom: 12px;">
+      Ask Claude about card prices, flip opportunities, market trends, or get advice on deals!
+    </div>
+    
+    <!-- Quick Action Buttons -->
+    <div class="flex" style="gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+      <button class="ai-quick-btn" data-query="What are the best flip opportunities right now?">🔥 Best Flips</button>
+      <button class="ai-quick-btn" data-query="Which cards are trending up and worth buying?">📈 Trending Up</button>
+      <button class="ai-quick-btn" data-query="What Luffy cards should I chase?">🏴‍☠️ Chase Luffy</button>
+      <button class="ai-quick-btn" data-query="Find undervalued manga cards under $100">📖 Manga Deals</button>
+      <button class="ai-quick-btn" data-query="What championship/promo cards are best investments?">🏆 Promos</button>
+    </div>
+    
+    <!-- Chat Messages Area -->
+    <div id="aiChatMessages" style="
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--op-gold);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+    ">
+      <div class="ai-message assistant" style="
+        background: linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1));
+        border-left: 3px solid var(--op-gold);
+        padding: 10px 12px;
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 8px;
+      ">
+        <strong style="color: var(--op-gold);">🤖 Claude:</strong>
+        <span style="color: var(--op-cream);">Hello! I'm your One Piece TCG analyst. Ask me anything about card prices, flip opportunities, market trends, or which cards to hunt. Try the quick buttons above or type your own question!</span>
+      </div>
+    </div>
+    
+    <!-- Chat Input -->
+    <div class="flex" style="gap: 8px;">
+      <input type="text" id="aiChatInput" placeholder="Ask about cards, prices, trends, deals..." style="
+        flex: 1;
+        padding: 10px 14px;
+        border: 1px solid var(--op-gold);
+        border-radius: 8px;
+        background: var(--op-navy);
+        color: var(--op-cream);
+        font-size: 14px;
+      ">
+      <button id="aiChatSend" style="
+        background: linear-gradient(135deg, var(--op-gold), #b8860b);
+        color: var(--op-navy);
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+      ">Send 🚀</button>
+    </div>
+    
+    <div id="aiChatLoading" style="display: none; text-align: center; padding: 10px; color: var(--op-gold);">
+      <span class="loading-spinner">⏳</span> Claude is thinking...
+    </div>
+  </section>
+
   <section class="sync-section">
     <h3 style="margin-top:0;">🔄 SYNC ALL CARDS</h3>
     <div class="flex" style="flex-wrap: wrap; gap: 12px; align-items: center;">

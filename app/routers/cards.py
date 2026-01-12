@@ -662,3 +662,77 @@ def sync_all_status() -> dict:
     """
     return card_service.get_sync_status()
 
+
+# =============================================================================
+# AI CHAT ENDPOINTS
+# =============================================================================
+
+from ..services import ai_chat as ai_service
+from pydantic import BaseModel
+
+
+class ChatRequest(BaseModel):
+    """Request model for AI chat."""
+    message: str
+    conversation_history: Optional[list] = None
+
+
+class ChatResponse(BaseModel):
+    """Response model for AI chat."""
+    response: Optional[str] = None
+    error: Optional[str] = None
+
+
+@router.post("/ai/chat", response_model=ChatResponse)
+def ai_chat(
+    request: ChatRequest,
+    db: Session = Depends(get_db)
+) -> ChatResponse:
+    """
+    Chat with Claude AI about card data and analysis.
+    
+    Send a message and receive AI-powered insights about:
+    - Specific cards or characters
+    - Flip opportunities and undervalued cards
+    - Price trends and predictions
+    - Market analysis and strategies
+    
+    Args:
+        request: Chat request with message and optional history.
+        db: Database session.
+        
+    Returns:
+        ChatResponse: AI response or error message.
+    """
+    result = ai_service.chat_with_claude(
+        db=db,
+        user_message=request.message,
+        conversation_history=request.conversation_history
+    )
+    return ChatResponse(**result)
+
+
+@router.get("/ai/quick-analysis/{analysis_type}", response_model=dict)
+def ai_quick_analysis(
+    analysis_type: str,
+    db: Session = Depends(get_db)
+) -> dict:
+    """
+    Get pre-built quick analysis.
+    
+    Available types:
+    - top_flips: Best flip opportunities
+    - trending_up: Cards with rising prices
+    - trending_down: Cards with falling prices
+    - chase_cards: Rare/sought-after variants
+    - undervalued: Potentially underpriced cards
+    
+    Args:
+        analysis_type: Type of analysis to run.
+        db: Database session.
+        
+    Returns:
+        dict: Analysis results.
+    """
+    return ai_service.get_quick_analysis(db, analysis_type)
+

@@ -17,6 +17,7 @@ class Settings(BaseModel):
         upload_max_bytes (int): Maximum allowed upload size for images.
         default_limit (int): Default page size for list endpoints.
         default_offset (int): Default offset for pagination.
+        anthropic_api_key (str): API key for Anthropic Claude.
     """
 
     data_dir: Path = BASE_DIR / "data"
@@ -27,6 +28,7 @@ class Settings(BaseModel):
     default_limit: int = 50
     default_offset: int = 0
     default_language: str = "English"
+    anthropic_api_key: str = ""  # Set via environment variable ANTHROPIC_API_KEY
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

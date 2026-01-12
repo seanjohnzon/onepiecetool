@@ -725,3 +725,132 @@ function renderTopFlips(cards, filters = {}) {
     </div>`;
   }).join("");
 }
+
+// =============================================================================
+// AI CHAT FUNCTIONALITY
+// =============================================================================
+
+let conversationHistory = [];
+
+function wireAIChatEvents() {
+  const sendBtn = document.getElementById("aiChatSend");
+  const inputEl = document.getElementById("aiChatInput");
+  const quickBtns = document.querySelectorAll(".ai-quick-btn");
+  
+  if (sendBtn) {
+    sendBtn.addEventListener("click", sendAIMessage);
+  }
+  
+  if (inputEl) {
+    inputEl.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendAIMessage();
+      }
+    });
+  }
+  
+  // Quick action buttons
+  quickBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const query = btn.dataset.query;
+      if (query) {
+        document.getElementById("aiChatInput").value = query;
+        sendAIMessage();
+      }
+    });
+  });
+}
+
+async function sendAIMessage() {
+  const inputEl = document.getElementById("aiChatInput");
+  const messagesEl = document.getElementById("aiChatMessages");
+  const loadingEl = document.getElementById("aiChatLoading");
+  
+  const message = inputEl.value.trim();
+  if (!message) return;
+  
+  // Add user message to chat
+  addChatMessage("user", message);
+  inputEl.value = "";
+  
+  // Show loading
+  loadingEl.style.display = "block";
+  
+  try {
+    const res = await fetch("/cards/ai/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: message,
+        conversation_history: conversationHistory.slice(-6)
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      addChatMessage("error", data.error);
+    } else if (data.response) {
+      addChatMessage("assistant", data.response);
+      
+      // Store in history
+      conversationHistory.push({ role: "user", content: message });
+      conversationHistory.push({ role: "assistant", content: data.response });
+    }
+  } catch (err) {
+    addChatMessage("error", "Failed to connect to AI: " + err.message);
+  } finally {
+    loadingEl.style.display = "none";
+  }
+}
+
+function addChatMessage(role, content) {
+  const messagesEl = document.getElementById("aiChatMessages");
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "ai-message " + role;
+  
+  let bgStyle, borderColor, label, textColor;
+  
+  if (role === "user") {
+    bgStyle = "rgba(59,130,246,0.2)";
+    borderColor = "#3b82f6";
+    label = "👤 You:";
+    textColor = "#93c5fd";
+  } else if (role === "assistant") {
+    bgStyle = "linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))";
+    borderColor = "#d4af37";
+    label = "🤖 Claude:";
+    textColor = "#f5f5dc";
+  } else {
+    bgStyle = "rgba(239,68,68,0.2)";
+    borderColor = "#ef4444";
+    label = "⚠️ Error:";
+    textColor = "#fca5a5";
+  }
+  
+  msgDiv.style.cssText = `
+    background: ${bgStyle};
+    border-left: 3px solid ${borderColor};
+    padding: 10px 12px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 8px;
+  `;
+  
+  // Format content - convert markdown-style formatting
+  let formattedContent = content
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+  
+  msgDiv.innerHTML = `
+    <strong style="color: ${borderColor};">${label}</strong>
+    <span style="color: ${textColor};">${formattedContent}</span>
+  `;
+  
+  messagesEl.appendChild(msgDiv);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// Initialize AI chat on page load
+document.addEventListener("DOMContentLoaded", function() {
+  wireAIChatEvents();
+});
