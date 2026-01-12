@@ -1,4 +1,5 @@
 from pathlib import Path
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -10,7 +11,9 @@ from .models import Base
 from .routers import cards
 
 
+# Load environment variables from .env file
 BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR.parent / ".env")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app = FastAPI(title="One Piece TCG Tracker", version="0.1.0")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
