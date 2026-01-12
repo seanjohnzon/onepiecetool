@@ -187,6 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchSets();
   wireSyncEvents();
   wireNavigationEvents();
+  wireLotEvents();
   wireLotSearchEvents();
   wireAiChatEvents();
   restoreLotFromSession();
