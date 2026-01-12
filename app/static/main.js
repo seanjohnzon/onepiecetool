@@ -345,7 +345,12 @@ function escapeHtml(t) { const d = document.createElement("div"); d.textContent 
 
 function renderSuggestedCards(cards) {
   if (!cards?.length) return "";
-  return `<div class="ai-suggested-cards"><span class="small" style="color:var(--op-gold);">Suggested:</span>${cards.map(c => { const cardJson = JSON.stringify(c).replace(/'/g, "&#39;"); return '<button class="ai-card-btn" data-card=\'' + cardJson + '\' style="background:rgba(245,197,66,.2);border:1px solid var(--op-gold);border-radius:4px;padding:4px 8px;font-size:12px;color:var(--op-cream);cursor:pointer;">' + c.card_name + ' ' + (c.card_number||"") + '</button>'; }).join("")}<button class="ai-add-all-btn" data-cards='${JSON.stringify(cards).replace(/'/g, "&#39;")}'>+ Add All</button></div>`;
+  const cardsHtml = cards.map(c => {
+    const cardJson = JSON.stringify(c).replace(/'/g, "&#39;");
+    const imgSrc = c.image_url || "/static/placeholder-card.svg";
+    return '<div class="ai-card-suggestion" style="background:rgba(15,23,41,0.9);border:1px solid rgba(245,197,66,0.4);border-radius:8px;padding:8px;min-width:130px;text-align:center;flex-shrink:0;"><img src="' + imgSrc + '" alt="' + c.card_name + '" style="width:100%;height:80px;object-fit:contain;border-radius:4px;margin-bottom:6px;" onerror="this.src=\'/static/placeholder-card.svg\'"><div style="font-size:11px;font-weight:600;color:var(--op-cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + c.card_name + '">' + c.card_name + '</div><div style="font-size:10px;color:var(--op-gray);">' + (c.card_number || "") + '</div><div style="font-size:13px;font-weight:700;color:var(--op-gold);margin:4px 0;">$' + (c.price?.toFixed(2) || "?") + '</div><button class="ai-card-btn" data-card=\'' + cardJson + '\' style="width:100%;padding:6px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:4px;color:white;font-size:11px;font-weight:600;cursor:pointer;">+ Add to Lot</button></div>';
+  }).join("");
+  return '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(245,197,66,0.2);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:13px;font-weight:600;color:var(--op-gold);">📦 Recommended Cards (' + cards.length + ')</span><button class="ai-add-all-btn" data-cards=\'' + JSON.stringify(cards).replace(/'/g, "&#39;") + '\' style="padding:6px 12px;background:linear-gradient(135deg,var(--op-gold),#b8860b);border:none;border-radius:4px;color:var(--op-navy);font-size:11px;font-weight:600;cursor:pointer;">+ Add All to Lot</button></div><div class="ai-suggested-cards" style="display:flex;gap:10px;overflow-x:auto;padding:8px 0;">' + cardsHtml + '</div></div>';
 }
 
 function wireSuggestedCardButtons() {
