@@ -1042,63 +1042,21 @@
         </div>
       </div>
       
-      <!-- Save Lot Actions -->
+      <!-- Save Lot (Future Feature) -->
       <div class="flex" style="justify-content: flex-end; margin-top: 16px; gap: 8px;">
         <button id="copyLotBtn" class="secondary" style="display: none;">📋 Copy List</button>
         <button id="saveLotBtn" class="secondary" style="display: none; background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid #22c55e;">💾 Save Lot...</button>
       </div>
     </section>
-    
-    <!-- My Saved Lots Section -->
-    <section class="saved-lots-section" style="margin-top: 24px;">
-      <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="margin: 0;">💾 MY SAVED LOTS</h3>
-        <button id="refreshLotsBtn" class="secondary" style="font-size: 14px;">🔄 Refresh</button>
-      </div>
-      <div id="savedLotsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-        <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--op-gray);">
-          No saved lots yet. Build a lot and click "Save Lot" to save it!
-        </div>
-      </div>
-    </section>
 
   </div><!-- end page-ai-analyst -->
-  
-  <!-- Save Lot Modal -->
-  <div id="saveLotModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--op-navy-light); border-radius: 16px; padding: 24px; max-width: 400px; width: 90%; border: 2px solid var(--op-gold);">
-      <h3 style="margin: 0 0 16px 0; color: var(--op-gold);">💾 Save This Lot</h3>
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 4px; color: var(--op-cream);">Lot Name *</label>
-        <input type="text" id="saveLotName" placeholder="e.g., Luffy Collection, March Flips..." style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(245,197,66,0.3); background: rgba(0,0,0,0.3); color: var(--op-cream);">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 4px; color: var(--op-cream);">Description (optional)</label>
-        <textarea id="saveLotDesc" placeholder="Notes about this lot..." rows="2" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(245,197,66,0.3); background: rgba(0,0,0,0.3); color: var(--op-cream); resize: none;"></textarea>
-      </div>
-      <div id="saveLotSummary" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-        <div class="flex" style="justify-content: space-between; margin-bottom: 8px;">
-          <span style="color: var(--op-gray);">Cards:</span>
-          <span id="modalLotCount" style="color: var(--op-cream); font-weight: 600;">0</span>
-        </div>
-        <div class="flex" style="justify-content: space-between;">
-          <span style="color: var(--op-gray);">Total Value:</span>
-          <span id="modalLotValue" style="color: var(--op-gold); font-weight: 600;">$0.00</span>
-        </div>
-      </div>
-      <div class="flex" style="gap: 12px; justify-content: flex-end;">
-        <button id="cancelSaveLot" class="secondary" style="padding: 10px 20px;">Cancel</button>
-        <button id="confirmSaveLot" class="primary-action" style="background: linear-gradient(135deg, #22c55e, #16a34a); padding: 10px 20px;">💾 Save Lot</button>
-      </div>
-    </div>
-  </div>
 
   </div><!-- end app-container -->
 
   <script>
     const DEFAULT_LIMIT = {{ default_limit }};
   </script>
-  <script src="/static/main.js?v=20260112c"></script>
+  <script src="/static/main.js?v=20260112a"></script>
 </body>
 </html>
 
