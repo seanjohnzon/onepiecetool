@@ -319,12 +319,17 @@ async function sendAiMessage(query) {
   msgs.scrollTop = msgs.scrollHeight;
   if (loading) loading.style.display = "block";
   try {
-    const form = new FormData();
-    form.append("query", query);
-    form.append("history", JSON.stringify(chatHistory));
-    if (workingLot.length) form.append("lot_context", workingLot.map(c => `${c.card_name} [${c.variant||"Base"}] $${c.price?.toFixed(2)||"?"}`).join(", "));
-    const res = await fetch("/cards/ai/chat", { method: "POST", body: form });
-    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).detail || "AI request failed");
+    const lotContext = workingLot.length ? workingLot.map(c => `${c.card_name} [${c.variant||"Base"}] $${c.price?.toFixed(2)||"?"}`).join(", ") : "";
+    const fullMessage = lotContext ? `[User has these cards in lot: ${lotContext}]\n\n${query}` : query;
+    const res = await fetch("/cards/ai/chat", { 
+      method: "POST", 
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: fullMessage, conversation_history: chatHistory })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || errData.error || "AI request failed");
+    }
     const data = await res.json();
     const response = data.response || "No response.";
     chatHistory.push({ role: "user", content: query }, { role: "assistant", content: response });
