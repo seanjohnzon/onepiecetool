@@ -306,6 +306,8 @@ def get_top_flips(
     trend_method: str = Query("sma", description="Trend method: sma or ema"),
     character: Optional[str] = Query(None, description="Filter by character name"),
     variant_type: Optional[str] = Query(None, description="Filter by variant type (AA, SP, Promo, etc)"),
+    price_min: Optional[float] = Query(None, ge=0, description="Minimum price filter"),
+    price_max: Optional[float] = Query(None, ge=0, description="Maximum price filter"),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -318,6 +320,8 @@ def get_top_flips(
         trend_method: 'sma' or 'ema' for trend calculation.
         character: Filter by character name (partial match).
         variant_type: Filter by variant type.
+        price_min: Minimum price.
+        price_max: Maximum price.
         
     Returns:
         dict: Top flip opportunities.
@@ -341,6 +345,14 @@ def get_top_flips(
         else:
             where_clauses.append("LOWER(variant) LIKE LOWER(:variant_type)")
             params["variant_type"] = f"%{variant_type}%"
+    
+    if price_min is not None:
+        where_clauses.append("price >= :price_min")
+        params["price_min"] = price_min
+    
+    if price_max is not None:
+        where_clauses.append("price <= :price_max")
+        params["price_max"] = price_max
     
     where_sql = " AND ".join(where_clauses)
     

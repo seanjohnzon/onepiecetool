@@ -593,6 +593,8 @@ function wireTopFlipsEvents() {
   const trendSelect = document.getElementById("trendMethod");
   const charSelect = document.getElementById("flipCharacter");
   const variantSelect = document.getElementById("flipVariant");
+  const priceMinInput = document.getElementById("flipPriceMin");
+  const priceMaxInput = document.getElementById("flipPriceMax");
   
   if (refreshBtn) {
     refreshBtn.addEventListener("click", loadTopFlips);
@@ -605,6 +607,12 @@ function wireTopFlipsEvents() {
   }
   if (variantSelect) {
     variantSelect.addEventListener("change", loadTopFlips);
+  }
+  if (priceMinInput) {
+    priceMinInput.addEventListener("change", loadTopFlips);
+  }
+  if (priceMaxInput) {
+    priceMaxInput.addEventListener("change", loadTopFlips);
   }
   
   // Quick preset buttons
@@ -658,6 +666,8 @@ async function loadTopFlips() {
   const trendMethod = document.getElementById("trendMethod")?.value || "sma";
   const character = document.getElementById("flipCharacter")?.value || "";
   const variantType = document.getElementById("flipVariant")?.value || "";
+  const priceMin = document.getElementById("flipPriceMin")?.value || "";
+  const priceMax = document.getElementById("flipPriceMax")?.value || "";
   
   grid.innerHTML = '<div class="small">Loading top flip opportunities...</div>';
   
@@ -665,6 +675,8 @@ async function loadTopFlips() {
   let url = "/cards/top-flips?limit=10&trend_method=" + trendMethod;
   if (character) url += "&character=" + encodeURIComponent(character);
   if (variantType) url += "&variant_type=" + encodeURIComponent(variantType);
+  if (priceMin) url += "&price_min=" + encodeURIComponent(priceMin);
+  if (priceMax) url += "&price_max=" + encodeURIComponent(priceMax);
   
   try {
     const res = await fetch(url);
