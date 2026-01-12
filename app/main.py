@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .config import Settings, get_settings
-from .database import engine, ensure_columns
+from .database import engine, init_database
 from .models import Base
 from .routers import cards
 
@@ -25,7 +25,7 @@ def on_startup() -> None:
     """
 
     Base.metadata.create_all(bind=engine)
-    ensure_columns()
+    init_database()
 
 
 @app.get("/health", response_class=HTMLResponse)

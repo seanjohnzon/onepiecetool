@@ -352,52 +352,125 @@ def list_cards(
     variant: Optional[str],
     scarcity: Optional[str],
     strategy: Optional[str],
-    limit: int,
-    offset: int,
+    price_min: Optional[float] = None,
+    price_max: Optional[float] = None,
+    rarity_min: Optional[float] = None,
+    rarity_max: Optional[float] = None,
+    value_score_min: Optional[float] = None,
+    value_score_max: Optional[float] = None,
+    has_image: Optional[bool] = None,
+    language: Optional[str] = None,
+    variant_type: Optional[str] = None,
+    sort_by: Optional[str] = "price",
+    sort_order: Optional[str] = "desc",
+    limit: int = 50,
+    offset: int = 0,
 ) -> tuple[int, list[Card]]:
     """
     Fetch cards with filtering and pagination.
-
-    Args:
-        db (Session): Database session.
-        set_codes (Optional[list[str]]): Filter by set codes.
-        priority_min (Optional[int]): Minimum manual priority.
-        priority_max (Optional[int]): Maximum manual priority.
-        search (Optional[str]): Search term for card name.
-        variant (Optional[str]): Variant filter.
-        scarcity (Optional[str]): Scarcity filter.
-        strategy (Optional[str]): Strategy filter.
-        limit (int): Page size.
-        offset (int): Offset for pagination.
 
     Returns:
         tuple[int, list[Card]]: Total count and list of cards.
     """
 
     query = db.query(Card)
+    
+    # Set filter
     if set_codes:
         query = query.filter(Card.set_code.in_(set_codes))
+    
+    # Priority filters
     if priority_min is not None:
         query = query.filter(Card.priority_manual >= priority_min)
     if priority_max is not None:
         query = query.filter(Card.priority_manual <= priority_max)
+    
+    # Text search
     if search:
         search_term = f"%{search.lower()}%"
         query = query.filter(func.lower(Card.card_name).like(search_term))
+    
+    # Variant filter (exact match)
     if variant:
         query = query.filter(Card.variant == normalize_variant(variant))
+    
+    # Scarcity filter
     if scarcity:
         query = query.filter(func.lower(Card.scarcity) == scarcity.lower())
+    
+    # Strategy filter
     if strategy:
         query = query.filter(func.lower(Card.strategy) == strategy.lower())
+    
+    # Price range filters
+    if price_min is not None:
+        query = query.filter(Card.price >= price_min)
+    if price_max is not None:
+        query = query.filter(Card.price <= price_max)
+    
+    # Rarity score filters
+    if rarity_min is not None:
+        query = query.filter(Card.rarity_score >= rarity_min)
+    if rarity_max is not None:
+        query = query.filter(Card.rarity_score <= rarity_max)
+    
+    # Value score filters
+    if value_score_min is not None:
+        query = query.filter(Card.value_score >= value_score_min)
+    if value_score_max is not None:
+        query = query.filter(Card.value_score <= value_score_max)
+    
+    # Has image filter
+    if has_image is not None:
+        if has_image:
+            query = query.filter(Card.image_url.isnot(None), Card.image_url != "")
+        else:
+            query = query.filter((Card.image_url.is_(None)) | (Card.image_url == ""))
+    
+    # Language filter
+    if language:
+        query = query.filter(func.lower(Card.language) == language.lower())
+    
+    # Variant type filter (base, alt_art, promo)
+    if variant_type:
+        variant_lower = variant_type.lower()
+        if variant_lower == "base":
+            query = query.filter(
+                (Card.variant.is_(None)) | 
+                (func.lower(Card.variant) == "base") |
+                (Card.variant == "")
+            )
+        elif variant_lower in ("alt_art", "alternate_art", "alt"):
+            query = query.filter(
+                func.lower(Card.variant).like("%alt%") |
+                func.lower(Card.variant).like("%alternate%")
+            )
+        elif variant_lower == "promo":
+            query = query.filter(func.lower(Card.variant).like("%promo%"))
+        elif variant_lower == "leader":
+            query = query.filter(func.lower(Card.variant).like("%leader%"))
 
     total = query.count()
+    
+    # Sorting
+    sort_column_map = {
+        "price": Card.price,
+        "rarity_score": Card.rarity_score,
+        "value_score": Card.value_score,
+        "name": Card.card_name,
+        "card_number": Card.card_number,
+        "priority": Card.auto_priority_rank,
+    }
+    
+    sort_col = sort_column_map.get(sort_by, Card.price)
+    
+    if sort_order == "asc":
+        order_clause = sort_col.asc().nullslast()
+    else:
+        order_clause = sort_col.desc().nullslast()
+    
     items = (
-        query.order_by(
-            Card.auto_priority_rank.asc().nullslast(),
-            Card.value_score.desc().nullslast(),
-            Card.rarity_score.desc().nullslast(),
-        )
+        query.order_by(order_clause)
         .offset(offset)
         .limit(limit)
         .all()
@@ -1019,4 +1092,145 @@ def export_cards_to_excel(db: Session, set_codes: Optional[list[str]] = None) ->
             worksheet.column_dimensions[chr(65 + i)].width = min(max_length, 50)
 
     return output.getvalue()
+
+
+# =============================================================================
+# BACKGROUND SYNC ALL
+# =============================================================================
+
+import threading
+import time
+
+# Global sync status
+_sync_status = {
+    "running": False,
+    "total": 0,
+    "synced": 0,
+    "failed": 0,
+    "current_card": None,
+    "errors": [],
+}
+
+
+def get_sync_status() -> dict:
+    """Get current sync status."""
+    return _sync_status.copy()
+
+
+def sync_all_cards_background(db_url: str, batch_size: int = 5, delay_seconds: float = 5.0):
+    """
+    Sync all cards that don't have images in background.
+    
+    Args:
+        db_url: Database URL for creating new session.
+        batch_size: Cards to sync before sleeping.
+        delay_seconds: Seconds to wait between batches.
+    """
+    global _sync_status
+    
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session as SqlSession
+    
+    _sync_status = {
+        "running": True,
+        "total": 0,
+        "synced": 0,
+        "failed": 0,
+        "current_card": None,
+        "errors": [],
+    }
+    
+    engine = create_engine(db_url, connect_args={"check_same_thread": False})
+    
+    try:
+        with SqlSession(engine) as db:
+            # Get cards without images that have market_url
+            cards_to_sync = db.query(Card).filter(
+                Card.market_url.isnot(None),
+                Card.market_url != "",
+                (Card.image_url.is_(None)) | (Card.image_url == "")
+            ).order_by(Card.price.desc()).all()  # Highest value first
+            
+            _sync_status["total"] = len(cards_to_sync)
+            
+            if _sync_status["total"] == 0:
+                _sync_status["running"] = False
+                return
+            
+            for i, card in enumerate(cards_to_sync):
+                if not _sync_status["running"]:
+                    break  # Allow stopping
+                
+                _sync_status["current_card"] = f"{card.card_name} ({card.card_number})"
+                
+                try:
+                    meta = fetch_market_metadata(card.market_url)
+                    
+                    if meta.get("image_url"):
+                        card.image_url = meta["image_url"]
+                    if meta.get("price") is not None:
+                        card.price = meta["price"]
+                    if meta.get("variant"):
+                        card.variant = adjust_variant_for_language(
+                            meta["variant"], 
+                            meta.get("language") or card.language
+                        )
+                    
+                    # Recalculate scores
+                    card.rarity_score = float(detect_rarity_score(card.variant, card.scarcity))
+                    value_score = compute_value_score(card.rarity_score, card.price)
+                    if value_score is not None:
+                        card.value_score = value_score
+                    
+                    db.commit()
+                    _sync_status["synced"] += 1
+                    
+                except Exception as e:
+                    _sync_status["failed"] += 1
+                    if len(_sync_status["errors"]) < 10:
+                        _sync_status["errors"].append(f"{card.card_number}: {str(e)[:50]}")
+                
+                # Rate limiting
+                if (i + 1) % batch_size == 0:
+                    time.sleep(delay_seconds)
+            
+            # Final recompute of priority ranks
+            recompute_priority_ranks(db)
+            db.commit()
+            
+    finally:
+        _sync_status["running"] = False
+        _sync_status["current_card"] = None
+
+
+def start_background_sync(db_url: str) -> dict:
+    """
+    Start background sync in a separate thread.
+    
+    Args:
+        db_url: Database URL.
+        
+    Returns:
+        Status dict.
+    """
+    global _sync_status
+    
+    if _sync_status["running"]:
+        return {"status": "already_running", **_sync_status}
+    
+    thread = threading.Thread(
+        target=sync_all_cards_background,
+        args=(db_url,),
+        daemon=True
+    )
+    thread.start()
+    
+    return {"status": "started", "message": "Background sync started"}
+
+
+def stop_background_sync() -> dict:
+    """Stop the background sync."""
+    global _sync_status
+    _sync_status["running"] = False
+    return {"status": "stopping", "message": "Sync will stop after current card"}
 

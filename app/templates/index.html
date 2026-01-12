@@ -42,21 +42,84 @@
   <h1>One Piece TCG Tracker</h1>
 
   <section>
-    <div class="flex" style="justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+    <!-- Row 1: Sets -->
+    <div style="margin-bottom:12px;">
+      <div style="font-weight:600; margin-bottom:6px;">Sets</div>
+      <div id="setsNav" class="sets-nav"></div>
+    </div>
+
+    <!-- Row 2: Filters -->
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom:12px; padding:12px; background:#f8fafc; border-radius:8px;">
       <div>
-        <div style="font-weight:600;">Sets</div>
-        <div id="setsNav" class="sets-nav"></div>
+        <label for="searchTerm">🔍 Search</label>
+        <input id="searchTerm" placeholder="Card name..." />
       </div>
-      <div style="min-width:220px;">
-        <label for="searchTerm">Search (name/character)</label>
-        <input id="searchTerm" placeholder="Type to filter..." />
+      <div>
+        <label for="filterPriceMin">💰 Min Price</label>
+        <input type="number" id="filterPriceMin" step="0.01" min="0" placeholder="$0" />
       </div>
-      <div class="flex" style="align-self: end; gap: 8px;">
-        <button id="applyFilters">Apply</button>
-        <button class="secondary" id="resetFilters">Reset</button>
-        <button class="secondary" id="exportExcel" style="background:#10b981; color:#fff; border-color:#10b981;">📥 Export Excel</button>
+      <div>
+        <label for="filterPriceMax">💰 Max Price</label>
+        <input type="number" id="filterPriceMax" step="0.01" min="0" placeholder="$999" />
+      </div>
+      <div>
+        <label for="filterRarityMin">⭐ Min Rarity</label>
+        <input type="number" id="filterRarityMin" step="1" min="0" max="100" placeholder="0" />
+      </div>
+      <div>
+        <label for="filterValueMin">📈 Min Value Score</label>
+        <input type="number" id="filterValueMin" step="1" min="0" placeholder="0" />
+      </div>
+      <div>
+        <label for="filterVariantType">🎴 Variant Type</label>
+        <select id="filterVariantType">
+          <option value="">All</option>
+          <option value="base">Base</option>
+          <option value="alt_art">Alternate Art</option>
+          <option value="promo">Promo</option>
+          <option value="leader">Leader</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterHasImage">🖼️ Has Image</label>
+        <select id="filterHasImage">
+          <option value="">All</option>
+          <option value="true">With Image</option>
+          <option value="false">No Image</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterSortBy">📊 Sort By</label>
+        <select id="filterSortBy">
+          <option value="price">Price</option>
+          <option value="rarity_score">Rarity Score</option>
+          <option value="value_score">Value Score</option>
+          <option value="name">Name</option>
+          <option value="card_number">Card Number</option>
+          <option value="priority">Priority</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterSortOrder">↕️ Order</label>
+        <select id="filterSortOrder">
+          <option value="desc">High → Low</option>
+          <option value="asc">Low → High</option>
+        </select>
       </div>
     </div>
+
+    <!-- Row 3: Quick Presets & Actions -->
+    <div class="flex" style="gap: 8px; flex-wrap: wrap; margin-bottom:12px;">
+      <button class="secondary" id="presetHighValue" style="background:#fef3c7; color:#92400e; border-color:#f59e0b;">💎 High Value</button>
+      <button class="secondary" id="presetExpensive" style="background:#fee2e2; color:#991b1b; border-color:#ef4444;">🔥 $20+ Cards</button>
+      <button class="secondary" id="presetFlipOpp" style="background:#dcfce7; color:#166534; border-color:#22c55e;">📈 Flip Opportunities</button>
+      <button class="secondary" id="presetNoImage" style="background:#e0e7ff; color:#3730a3; border-color:#6366f1;">🖼️ Missing Images</button>
+      <div style="flex:1;"></div>
+      <button id="applyFilters">Apply Filters</button>
+      <button class="secondary" id="resetFilters">Clear All</button>
+      <button class="secondary" id="exportExcel" style="background:#10b981; color:#fff; border-color:#10b981;">📥 Export</button>
+    </div>
+
     <div id="cardsMeta" class="small" style="margin-top:6px;">Loading...</div>
     <div id="cardsGrid" class="cards-grid" style="margin-top:10px;"></div>
     <div class="flex" style="justify-content:flex-end; margin-top:10px;">
@@ -65,63 +128,139 @@
     </div>
   </section>
 
+  <!-- Admin sections hidden - access via /admin for editing -->
+  <div id="adminSections" style="display:none;">
+    <section>
+      <h3 style="margin-top:0;">Quick Add Card</h3>
+      <div class="grid cols-4">
+        <div>
+          <label for="createSetCode">Set Code</label>
+          <input id="createSetCode" placeholder="OP-05">
+        </div>
+        <div>
+          <label for="createCardName">Card Name</label>
+          <input id="createCardName" placeholder="Nami">
+        </div>
+        <div>
+          <label for="createCardNumber">Card Number</label>
+          <input id="createCardNumber" placeholder="OP05-100">
+        </div>
+        <div>
+          <label for="createVariant">Variant</label>
+          <input id="createVariant" placeholder="SP">
+        </div>
+      </div>
+      <div class="grid cols-4" style="margin-top:10px;">
+        <div>
+          <label for="createPrice">Avg Price ($)</label>
+          <input type="number" step="0.01" id="createPrice">
+        </div>
+        <div>
+          <label for="createRarity">Rarity Score (0-100)</label>
+          <input type="number" step="1" min="0" max="100" id="createRarity">
+        </div>
+        <div>
+          <label for="createPriority">Manual Priority</label>
+          <input type="number" min="0" id="createPriority">
+        </div>
+        <div>
+          <label for="createMarketUrl">Reference Link (PriceCharting/TCG)</label>
+          <input id="createMarketUrl" placeholder="https://...">
+          <div class="small">Optional. Leave blank to add manually.</div>
+        </div>
+        <div class="flex" style="align-items:center; gap:6px; margin-top:22px;">
+          <input type="checkbox" id="createSyncLink" checked />
+          <label for="createSyncLink" style="margin:0;">Sync image/price/variant from link after create</label>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button id="createCardBtn">Create Card</button>
+        <span id="createStatus" style="margin-left:8px;font-size:13px;color:#047857;"></span>
+      </div>
+    </section>
+
+    <section>
+      <h3 style="margin-top:0;">Import Excel</h3>
+      <div class="flex">
+        <input type="file" id="excelFile" accept=".xlsx,.xls,.xlsm">
+        <input id="sheetName" placeholder="MASTER LIST" value="MASTER LIST" style="max-width:140px;">
+        <button id="importBtn">Import</button>
+        <button class="secondary" id="backfillBtn" type="button">Backfill Scores</button>
+        <span id="importStatus" style="font-size:13px;color:#047857;"></span>
+      </div>
+    </section>
+  </div>
+
   <section>
-    <h3 style="margin-top:0;">Quick Add Card</h3>
-    <div class="grid cols-4">
+    <h3 style="margin-top:0;">🔥 Top Flip Opportunities</h3>
+    
+    <!-- Filters Row -->
+    <div class="flex" style="gap: 12px; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap;">
       <div>
-        <label for="createSetCode">Set Code</label>
-        <input id="createSetCode" placeholder="OP-05">
+        <label class="small" style="display:block; margin-bottom:4px;">🎯 Character</label>
+        <select id="flipCharacter" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #e5e7eb; min-width: 180px;">
+          <option value="">All Characters</option>
+        </select>
       </div>
       <div>
-        <label for="createCardName">Card Name</label>
-        <input id="createCardName" placeholder="Nami">
+        <label class="small" style="display:block; margin-bottom:4px;">🎴 Variant Type</label>
+        <select id="flipVariant" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #e5e7eb; min-width: 160px;">
+          <option value="">All Variants</option>
+          <option value="base">Base / Standard</option>
+          <option value="Alternate Art">Alternate Art (AA)</option>
+          <option value="Manga">Manga</option>
+          <option value="Parallel">Parallel / Foil</option>
+          <option value="Promo">Promo</option>
+          <option value="SP">SP (Special)</option>
+          <option value="Leader">Leader</option>
+          <option value="Championship">Championship</option>
+          <option value="Treasure">Treasure</option>
+          <option value="Gold">Gold</option>
+        </select>
       </div>
       <div>
-        <label for="createCardNumber">Card Number</label>
-        <input id="createCardNumber" placeholder="OP05-100">
+        <label class="small" style="display:block; margin-bottom:4px;">📊 Trend</label>
+        <select id="trendMethod" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #e5e7eb;">
+          <option value="sma">SMA</option>
+          <option value="ema">EMA</option>
+        </select>
       </div>
-      <div>
-        <label for="createVariant">Variant</label>
-        <input id="createVariant" placeholder="SP">
-      </div>
+      <button id="refreshFlipsBtn" class="secondary" style="height: 36px;">🔄 Refresh</button>
     </div>
-    <div class="grid cols-4" style="margin-top:10px;">
-      <div>
-        <label for="createPrice">Avg Price ($)</label>
-        <input type="number" step="0.01" id="createPrice">
-      </div>
-      <div>
-        <label for="createRarity">Rarity Score (0-100)</label>
-        <input type="number" step="1" min="0" max="100" id="createRarity">
-      </div>
-      <div>
-        <label for="createPriority">Manual Priority</label>
-        <input type="number" min="0" id="createPriority">
-      </div>
-      <div>
-        <label for="createMarketUrl">Reference Link (PriceCharting/TCG)</label>
-        <input id="createMarketUrl" placeholder="https://...">
-        <div class="small">Optional. Leave blank to add manually.</div>
-      </div>
-      <div class="flex" style="align-items:center; gap:6px; margin-top:22px;">
-        <input type="checkbox" id="createSyncLink" checked />
-        <label for="createSyncLink" style="margin:0;">Sync image/price/variant from link after create</label>
-      </div>
+    
+    <!-- Quick Filter Buttons -->
+    <div class="flex" style="gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+      <button class="flip-preset" data-char="" data-var="" style="padding: 4px 10px; font-size: 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer;">All</button>
+      <button class="flip-preset" data-char="Monkey.D.Luffy" data-var="" style="padding: 4px 10px; font-size: 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer;">🏴‍☠️ Luffy</button>
+      <button class="flip-preset" data-char="Roronoa Zoro" data-var="" style="padding: 4px 10px; font-size: 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer;">⚔️ Zoro</button>
+      <button class="flip-preset" data-char="Shanks" data-var="" style="padding: 4px 10px; font-size: 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer;">🔴 Shanks</button>
+      <button class="flip-preset" data-char="Portgas.D.Ace" data-var="" style="padding: 4px 10px; font-size: 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer;">🔥 Ace</button>
+      <button class="flip-preset" data-char="Nami" data-var="" style="padding: 4px 10px; font-size: 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer;">🍊 Nami</button>
+      <button class="flip-preset" data-char="" data-var="Alternate Art" style="padding: 4px 10px; font-size: 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer;">🎨 Alt Art</button>
+      <button class="flip-preset" data-char="" data-var="Manga" style="padding: 4px 10px; font-size: 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer;">📖 Manga</button>
+      <button class="flip-preset" data-char="" data-var="Championship" style="padding: 4px 10px; font-size: 12px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer;">🏆 Championship</button>
     </div>
-    <div style="margin-top:8px;">
-      <button id="createCardBtn">Create Card</button>
-      <span id="createStatus" style="margin-left:8px;font-size:13px;color:#047857;"></span>
+    
+    <div class="small" style="color:#6b7280; margin-bottom: 10px;">
+      💡 Use filters to find flip opportunities for the cards you're hunting!
+    </div>
+    
+    <div id="topFlipsGrid" class="cards-grid" style="max-height: 450px; overflow-y: auto;">
+      <div class="small">Loading top flip opportunities...</div>
     </div>
   </section>
 
   <section>
-    <h3 style="margin-top:0;">Import Excel</h3>
-    <div class="flex">
-      <input type="file" id="excelFile" accept=".xlsx,.xls,.xlsm">
-      <input id="sheetName" placeholder="MASTER LIST" value="MASTER LIST" style="max-width:140px;">
-      <button id="importBtn">Import</button>
-      <button class="secondary" id="backfillBtn" type="button">Backfill Scores</button>
-      <span id="importStatus" style="font-size:13px;color:#047857;"></span>
+    <h3 style="margin-top:0;">🔄 Sync All Cards (Images + Prices)</h3>
+    <div class="flex" style="flex-wrap: wrap; gap: 12px; align-items: center;">
+      <button id="startSyncBtn" style="background:#8b5cf6;">▶️ Start Sync</button>
+      <button id="stopSyncBtn" class="secondary" style="background:#ef4444; color:#fff;">⏹️ Stop</button>
+      <div id="syncStatus" style="font-size:13px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; min-width: 300px;">
+        Click "Start Sync" to begin background syncing
+      </div>
+    </div>
+    <div class="small" style="margin-top:8px; color:#6b7280;">
+      Syncs cards without images from PriceCharting. Highest value cards sync first. Runs in background.
     </div>
   </section>
 
