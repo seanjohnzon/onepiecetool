@@ -334,6 +334,7 @@ function wireEvents() {
     clearFilters();
     document.getElementById("filterPriceMin").value = "20";
     document.getElementById("filterSortBy").value = "price";
+    document.getElementById("filterSortOrder").value = "asc";
     loadCards(true);
   });
   
@@ -342,6 +343,7 @@ function wireEvents() {
     clearFilters();
     document.getElementById("filterPriceMin").value = "100";
     document.getElementById("filterSortBy").value = "price";
+    document.getElementById("filterSortOrder").value = "asc";
     loadCards(true);
   });
   
@@ -350,6 +352,7 @@ function wireEvents() {
     clearFilters();
     document.getElementById("filterPriceMin").value = "500";
     document.getElementById("filterSortBy").value = "price";
+    document.getElementById("filterSortOrder").value = "asc";
     loadCards(true);
   });
   
@@ -358,6 +361,7 @@ function wireEvents() {
     clearFilters();
     document.getElementById("filterPriceMin").value = "1000";
     document.getElementById("filterSortBy").value = "price";
+    document.getElementById("filterSortOrder").value = "asc";
     loadCards(true);
   });
   
