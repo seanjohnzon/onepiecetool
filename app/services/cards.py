@@ -460,6 +460,8 @@ def list_cards(
         "name": Card.card_name,
         "card_number": Card.card_number,
         "priority": Card.auto_priority_rank,
+        "trend": Card.trend_score_sma,
+        "flip_score": Card.flip_score,
     }
     
     sort_col = sort_column_map.get(sort_by, Card.price)

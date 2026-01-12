@@ -321,11 +321,12 @@ function wireEvents() {
     loadCards(true);
   });
   
-  // Preset: High Value (value score > 50)
+  // Preset: High Value ($50+ cards)
   document.getElementById("presetHighValue")?.addEventListener("click", () => {
     clearFilters();
-    document.getElementById("filterValueMin").value = "50";
-    document.getElementById("filterSortBy").value = "value_score";
+    document.getElementById("filterPriceMin").value = "50";
+    document.getElementById("filterSortBy").value = "price";
+    document.getElementById("filterSortOrder").value = "desc";
     loadCards(true);
   });
   
@@ -365,12 +366,12 @@ function wireEvents() {
     loadCards(true);
   });
   
-  // Preset: Flip Opportunities (high rarity, under $10)
-  document.getElementById("presetFlipOpp")?.addEventListener("click", () => {
+  // Preset: Trending (cards with positive price trends)
+  document.getElementById("presetTrending")?.addEventListener("click", () => {
     clearFilters();
-    document.getElementById("filterRarityMin").value = "60";
-    document.getElementById("filterPriceMax").value = "10";
-    document.getElementById("filterSortBy").value = "value_score";
+    document.getElementById("filterSortBy").value = "trend";
+    document.getElementById("filterSortOrder").value = "desc";
+    document.getElementById("filterPriceMin").value = "5";
     loadCards(true);
   });
 

@@ -88,7 +88,7 @@ def list_cards(
     has_image: Optional[bool] = Query(None, description="Filter by image presence"),
     language: Optional[str] = Query(None, description="Filter by language"),
     variant_type: Optional[str] = Query(None, description="Filter variant type: base, alt_art, promo"),
-    sort_by: Optional[str] = Query("price", description="Sort by: price, rarity_score, value_score, name, card_number, priority"),
+    sort_by: Optional[str] = Query("price", description="Sort by: price, trend, flip_score, rarity_score, value_score, name, card_number, priority"),
     sort_order: Optional[str] = Query("desc", description="Sort order: asc or desc"),
     limit: int = Query(50, gt=0, le=200),
     offset: int = Query(0, ge=0),
