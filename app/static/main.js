@@ -282,16 +282,19 @@ async function searchCardsForLot() {
   results.innerHTML = '<div class="small" style="padding:10px;color:var(--op-gray);">Searching...</div>';
   results.style.display = "block";
   try {
-    const res = await fetch(`/cards?search=${encodeURIComponent(q)}&limit=10`);
+    const res = await fetch(`/cards?search=${encodeURIComponent(q)}&limit=100`);
     const data = await res.json();
     const items = data.items || [];
+    const total = data.total || items.length;
     if (!items.length) { results.innerHTML = '<div class="small" style="padding:10px;">No cards found.</div>'; return; }
-    results.innerHTML = items.map(card => {
+    const header = `<div style="padding:8px 12px;background:rgba(245,197,66,0.15);border-bottom:1px solid rgba(245,197,66,0.3);font-size:13px;color:var(--op-gold);font-weight:600;">📦 Found ${total} cards for "${q}"</div>`;
+    const cardsList = items.map(card => {
       const img = card.image_path || card.image_url || "/static/placeholder-card.svg";
       const inLot = workingLot.find(c => c.id === card.id);
       const cardJson = JSON.stringify(card).replace(/'/g, "&#39;");
       return `<div class="search-result-item"><img src="${img}" onerror="this.src='/static/placeholder-card.svg'"><div class="info"><div class="name">${card.card_name}</div><div class="details">${card.card_number||""} · ${card.variant||"Base"}</div></div><div class="price">$${card.price?.toFixed(2)||"—"}</div><button class="add-btn" data-card='${cardJson}' ${inLot?"disabled style='opacity:.5'":""}>${inLot?"✓":"+ Add"}</button></div>`;
     }).join("");
+    results.innerHTML = header + `<div style="max-height:350px;overflow-y:auto;">${cardsList}</div>`;
     results.querySelectorAll(".add-btn").forEach(btn => { btn.addEventListener("click", e => { e.stopPropagation(); if (addCardToLot(JSON.parse(btn.dataset.card))) { btn.textContent = "✓"; btn.disabled = true; btn.style.opacity = ".5"; }}); });
   } catch (err) { results.innerHTML = `<div class="small" style="padding:10px;color:#ef4444;">Error: ${err.message}</div>`; }
 }
