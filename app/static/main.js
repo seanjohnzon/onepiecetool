@@ -329,7 +329,7 @@ async function sendAiMessage(query) {
       throw new Error(errData.detail || errData.error || "AI request failed");
     }
     const data = await res.json();
-    const response = data.response || "No response.";
+    const response = data.response || data.error || "No response from AI.";
     chatHistory.push({ role: "user", content: query }, { role: "assistant", content: response });
     if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
     msgs.innerHTML += `<div class="ai-message assistant" style="background:linear-gradient(135deg,rgba(212,175,55,.2),rgba(212,175,55,.1));border-left:3px solid var(--op-gold);padding:10px 12px;border-radius:0 8px 8px 0;margin-bottom:8px;"><strong style="color:var(--op-gold);">🤖 Claude:</strong> <span style="color:var(--op-cream);">${formatAiResponse(response)}</span>${data.suggested_cards?.length ? renderSuggestedCards(data.suggested_cards) : ""}</div>`;

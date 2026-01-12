@@ -289,7 +289,7 @@ User question: {user_message}"""
     
     try:
         response = client.messages.create(
-            model="claude-3-5-haiku-20241022",
+            model="claude-3-haiku-20240307",
             max_tokens=1024,
             system=SYSTEM_PROMPT,
             messages=messages
@@ -300,8 +300,10 @@ User question: {user_message}"""
             "error": None
         }
     except Exception as e:
+        # Log the error for debugging
+        print(f"AI Chat Error: {e}")
         return {
-            "response": None,
+            "response": f"AI Error: {str(e)}",
             "error": str(e)
         }
 
