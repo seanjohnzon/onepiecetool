@@ -78,10 +78,7 @@ function renderCards(items) {
       <div class="small">Language: ${item.language || "English"}</div>
       <div class="small">Priority: ${item.auto_priority_rank ?? "—"}</div>
       ${leaderBtnHtml}
-      <div class="links" style="display:flex;flex-direction:column;gap:6px;"><div>${linkHtml}</div>
-        <div class="flex" style="gap:6px;"><input type="text" data-role="market-link" data-id="${item.id}" value="${item.market_url || ""}" placeholder="Market link" style="flex:1;padding:6px;font-size:12px;"><button data-action="sync" data-id="${item.id}">Sync</button></div>
-      </div>
-      <div class="flex" style="justify-content:flex-end;"><button class="secondary" data-action="delete" data-id="${item.id}">Delete</button></div>
+      ${item.market_url ? `<div class="links"><a href="${item.market_url}" target="_blank" rel="noreferrer">📈 View on PriceCharting</a></div>` : ""}
     </div>`;
   }).join("");
 }
