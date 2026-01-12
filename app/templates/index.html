@@ -462,6 +462,188 @@
     ::-webkit-scrollbar-track { background: rgba(15, 23, 41, 0.5); border-radius: 4px; }
     ::-webkit-scrollbar-thumb { background: rgba(245, 197, 66, 0.4); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--op-gold); }
+    
+    /* Navigation */
+    .main-nav .nav-btn:hover {
+      border-color: var(--op-gold);
+      background: rgba(245, 197, 66, 0.2);
+    }
+    .main-nav .nav-btn.active {
+      background: var(--op-gold) !important;
+      color: var(--op-navy) !important;
+      border-color: var(--op-gold) !important;
+      box-shadow: 0 0 20px rgba(245, 197, 66, 0.4);
+    }
+    
+    /* AI Quick Buttons */
+    .ai-quick-btn {
+      padding: 8px 14px;
+      font-size: 13px;
+      border-radius: 25px;
+      border: 2px solid rgba(245, 197, 66, 0.3);
+      background: rgba(15, 23, 41, 0.6);
+      color: var(--op-cream);
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .ai-quick-btn:hover {
+      border-color: var(--op-gold);
+      background: rgba(245, 197, 66, 0.2);
+    }
+    
+    /* Working Lot Section */
+    .working-lot-section h3 {
+      color: var(--op-gold);
+    }
+    
+    /* Lot Card Tile */
+    .lot-card-tile {
+      background: rgba(15, 23, 41, 0.9);
+      border: 2px solid rgba(245, 197, 66, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .lot-card-tile:hover {
+      border-color: var(--op-gold);
+      transform: translateY(-2px);
+    }
+    .lot-card-tile .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(220, 38, 38, 0.8);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .lot-card-tile:hover .remove-btn {
+      opacity: 1;
+    }
+    .lot-card-tile .remove-btn:hover {
+      background: #dc2626;
+    }
+    .lot-card-tile .img-box {
+      width: 100%;
+      aspect-ratio: 3/4;
+      min-height: 160px;
+      border-radius: 8px;
+    }
+    .lot-card-tile .card-info {
+      text-align: center;
+    }
+    .lot-card-tile .card-name {
+      font-weight: 700;
+      color: var(--op-cream);
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lot-card-tile .card-details {
+      font-size: 12px;
+      color: var(--op-gray);
+    }
+    .lot-card-tile .card-price {
+      font-weight: 700;
+      color: var(--op-gold);
+      font-size: 16px;
+    }
+    .lot-card-tile .card-trend {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .lot-card-tile .card-trend.positive { color: #22c55e; }
+    .lot-card-tile .card-trend.negative { color: #ef4444; }
+    .lot-card-tile .card-reason {
+      font-size: 11px;
+      color: var(--op-gold);
+      background: rgba(245, 197, 66, 0.15);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+    
+    /* Search Results Dropdown */
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .search-result-item:hover {
+      background: rgba(245, 197, 66, 0.2);
+    }
+    .search-result-item img {
+      width: 40px;
+      height: 55px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.3);
+    }
+    .search-result-item .info {
+      flex: 1;
+    }
+    .search-result-item .name {
+      font-weight: 600;
+      color: var(--op-cream);
+      font-size: 14px;
+    }
+    .search-result-item .details {
+      font-size: 12px;
+      color: var(--op-gray);
+    }
+    .search-result-item .price {
+      font-weight: 700;
+      color: var(--op-gold);
+    }
+    .search-result-item .add-btn {
+      background: var(--op-gold);
+      color: var(--op-navy);
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    /* AI Message with cards */
+    .ai-suggested-cards {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(245, 197, 66, 0.2);
+    }
+    .ai-add-all-btn {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: auto;
+    }
   </style>
 </head>
 <body>
@@ -469,6 +651,41 @@
   <header class="app-header">
     <h1><span class="logo-icon">☠️</span> ONE PIECE TCG TRACKER</h1>
   </header>
+
+  <!-- Navigation Bar -->
+  <nav class="main-nav" style="display: flex; gap: 8px; margin-bottom: 20px;">
+    <button class="nav-btn active" data-page="cards" style="
+      flex: 1;
+      padding: 14px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1.5px;
+      border: 2px solid var(--op-gold);
+      border-radius: 12px;
+      background: var(--op-gold);
+      color: var(--op-navy);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    ">🎴 CARD DATABASE</button>
+    <button class="nav-btn" data-page="ai-analyst" style="
+      flex: 1;
+      padding: 14px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1.5px;
+      border: 2px solid rgba(245, 197, 66, 0.3);
+      border-radius: 12px;
+      background: rgba(15, 23, 41, 0.8);
+      color: var(--op-cream);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    ">🤖 AI ANALYST</button>
+  </nav>
+
+  <!-- ==================== CARDS PAGE ==================== -->
+  <div id="page-cards" class="page-content">
 
   <section>
     <!-- Row 1: Sets -->
@@ -691,72 +908,6 @@
     </div>
   </section>
 
-  <!-- AI Chat Section -->
-  <section class="ai-chat-section" style="margin-top: 20px;">
-    <h3 style="margin-top:0;">🤖 AI CARD ANALYST</h3>
-    <div class="small" style="color: var(--op-cream); margin-bottom: 12px;">
-      Ask Claude about card prices, flip opportunities, market trends, or get advice on deals!
-    </div>
-    
-    <!-- Quick Action Buttons -->
-    <div class="flex" style="gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-      <button class="ai-quick-btn" data-query="What are the best flip opportunities right now?">🔥 Best Flips</button>
-      <button class="ai-quick-btn" data-query="Which cards are trending up and worth buying?">📈 Trending Up</button>
-      <button class="ai-quick-btn" data-query="What Luffy cards should I chase?">🏴‍☠️ Chase Luffy</button>
-      <button class="ai-quick-btn" data-query="Find undervalued manga cards under $100">📖 Manga Deals</button>
-      <button class="ai-quick-btn" data-query="What championship/promo cards are best investments?">🏆 Promos</button>
-    </div>
-    
-    <!-- Chat Messages Area -->
-    <div id="aiChatMessages" style="
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--op-gold);
-      border-radius: 8px;
-      padding: 12px;
-      min-height: 200px;
-      max-height: 400px;
-      overflow-y: auto;
-      margin-bottom: 12px;
-    ">
-      <div class="ai-message assistant" style="
-        background: linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1));
-        border-left: 3px solid var(--op-gold);
-        padding: 10px 12px;
-        border-radius: 0 8px 8px 0;
-        margin-bottom: 8px;
-      ">
-        <strong style="color: var(--op-gold);">🤖 Claude:</strong>
-        <span style="color: var(--op-cream);">Hello! I'm your One Piece TCG analyst. Ask me anything about card prices, flip opportunities, market trends, or which cards to hunt. Try the quick buttons above or type your own question!</span>
-      </div>
-    </div>
-    
-    <!-- Chat Input -->
-    <div class="flex" style="gap: 8px;">
-      <input type="text" id="aiChatInput" placeholder="Ask about cards, prices, trends, deals..." style="
-        flex: 1;
-        padding: 10px 14px;
-        border: 1px solid var(--op-gold);
-        border-radius: 8px;
-        background: var(--op-navy);
-        color: var(--op-cream);
-        font-size: 14px;
-      ">
-      <button id="aiChatSend" style="
-        background: linear-gradient(135deg, var(--op-gold), #b8860b);
-        color: var(--op-navy);
-        padding: 10px 20px;
-        border: none;
-        border-radius: 8px;
-        font-weight: bold;
-        cursor: pointer;
-      ">Send 🚀</button>
-    </div>
-    
-    <div id="aiChatLoading" style="display: none; text-align: center; padding: 10px; color: var(--op-gold);">
-      <span class="loading-spinner">⏳</span> Claude is thinking...
-    </div>
-  </section>
-
   <section class="sync-section">
     <h3 style="margin-top:0;">🔄 SYNC ALL CARDS</h3>
     <div class="flex" style="flex-wrap: wrap; gap: 12px; align-items: center;">
@@ -770,6 +921,136 @@
       Syncs cards without images from PriceCharting. Highest value cards sync first.
     </div>
   </section>
+
+  </div><!-- end page-cards -->
+
+  <!-- ==================== AI ANALYST PAGE ==================== -->
+  <div id="page-ai-analyst" class="page-content" style="display: none;">
+    
+    <!-- AI Chat Section -->
+    <section class="ai-chat-section">
+      <h3 style="margin-top:0;">🤖 AI CARD ANALYST</h3>
+      <div class="small" style="color: var(--op-cream); margin-bottom: 12px;">
+        Ask Claude about card prices, flip opportunities, market trends, or build a lot to analyze!
+      </div>
+      
+      <!-- Quick Action Buttons -->
+      <div class="flex" style="gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+        <button class="ai-quick-btn" data-query="What are the best flip opportunities right now?">🔥 Best Flips</button>
+        <button class="ai-quick-btn" data-query="Which cards are trending up and worth buying?">📈 Trending Up</button>
+        <button class="ai-quick-btn" data-query="What Luffy cards should I chase?">🏴‍☠️ Chase Luffy</button>
+        <button class="ai-quick-btn" data-query="Find undervalued manga cards under $100">📖 Manga Deals</button>
+        <button class="ai-quick-btn" data-query="What championship/promo cards are best investments?">🏆 Promos</button>
+      </div>
+      
+      <!-- Chat Messages Area -->
+      <div id="aiChatMessages" style="
+        background: rgba(0,0,0,0.3);
+        border: 1px solid var(--op-gold);
+        border-radius: 8px;
+        padding: 12px;
+        min-height: 200px;
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 12px;
+      ">
+        <div class="ai-message assistant" style="
+          background: linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1));
+          border-left: 3px solid var(--op-gold);
+          padding: 10px 12px;
+          border-radius: 0 8px 8px 0;
+          margin-bottom: 8px;
+        ">
+          <strong style="color: var(--op-gold);">🤖 Claude:</strong>
+          <span style="color: var(--op-cream);">Hello! I'm your One Piece TCG analyst. Ask me anything about card prices, flip opportunities, or market trends. You can also add cards below and I'll help you analyze deals!</span>
+        </div>
+      </div>
+      
+      <!-- Chat Input -->
+      <div class="flex" style="gap: 8px;">
+        <input type="text" id="aiChatInput" placeholder="Ask about cards, prices, trends, deals..." style="
+          flex: 1;
+          padding: 10px 14px;
+          border: 1px solid var(--op-gold);
+          border-radius: 8px;
+          background: var(--op-navy);
+          color: var(--op-cream);
+          font-size: 14px;
+        ">
+        <button id="aiChatSend" style="
+          background: linear-gradient(135deg, var(--op-gold), #b8860b);
+          color: var(--op-navy);
+          padding: 10px 20px;
+          border: none;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+        ">Send 🚀</button>
+      </div>
+      
+      <div id="aiChatLoading" style="display: none; text-align: center; padding: 10px; color: var(--op-gold);">
+        <span class="loading-spinner">⏳</span> Claude is thinking...
+      </div>
+    </section>
+
+    <!-- Working Lot Section -->
+    <section class="working-lot-section" style="margin-top: 20px;">
+      <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0;">🎴 WORKING LOT <span id="lotCount" style="font-size: 14px; font-weight: 400; color: var(--op-cream);">(0 cards)</span></h3>
+        <div class="flex" style="gap: 8px;">
+          <button id="analyzeLotBtn" class="primary-action" style="background: linear-gradient(135deg, var(--op-gold), #b8860b); color: var(--op-navy);">🤖 Analyze This Lot</button>
+          <button id="clearLotBtn" class="secondary" style="background: rgba(220,38,38,0.2); color: #ef4444; border: 1px solid #ef4444;">🗑️ Clear All</button>
+        </div>
+      </div>
+      
+      <!-- Add Card to Lot -->
+      <div class="filter-box" style="margin-bottom: 16px;">
+        <div class="flex" style="gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+          <div style="flex: 1; min-width: 250px;">
+            <label for="lotSearchInput">🔍 Search & Add Card</label>
+            <input type="text" id="lotSearchInput" placeholder="Search by name, card number..." style="width: 100%;">
+          </div>
+          <button id="lotSearchBtn" style="height: 42px;">Search</button>
+        </div>
+        <div id="lotSearchResults" style="display: none; margin-top: 12px; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px;"></div>
+      </div>
+      
+      <!-- Lot Summary -->
+      <div id="lotSummary" class="filter-box" style="display: none; margin-bottom: 16px;">
+        <div class="flex" style="justify-content: space-around; text-align: center;">
+          <div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--op-gold);">$<span id="lotTotalValue">0.00</span></div>
+            <div class="small">Total Market Value</div>
+          </div>
+          <div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--op-cream);"><span id="lotCardCount">0</span></div>
+            <div class="small">Cards in Lot</div>
+          </div>
+          <div>
+            <div style="font-size: 24px; font-weight: 700; color: #22c55e;"><span id="lotAvgTrend">—</span></div>
+            <div class="small">Avg Trend</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Lot Cards Grid -->
+      <div id="lotCardsGrid" class="cards-grid" style="min-height: 150px;">
+        <div class="empty-lot-message" style="grid-column: 1/-1; text-align: center; padding: 40px 20px; color: var(--op-gray);">
+          <div style="font-size: 48px; margin-bottom: 12px;">📋</div>
+          <div style="font-size: 16px; margin-bottom: 8px;">Your working lot is empty</div>
+          <div class="small">Search and add cards above, or ask the AI for recommendations!</div>
+        </div>
+      </div>
+      
+      <!-- Save Lot (Future Feature) -->
+      <div class="flex" style="justify-content: flex-end; margin-top: 16px; gap: 8px;">
+        <button id="copyLotBtn" class="secondary" style="display: none;">📋 Copy List</button>
+        <button id="saveLotBtn" class="secondary" style="display: none; background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid #22c55e;">💾 Save Lot...</button>
+      </div>
+    </section>
+
+  </div><!-- end page-ai-analyst -->
+
   </div><!-- end app-container -->
 
   <script>
