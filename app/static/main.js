@@ -337,19 +337,36 @@ function wireEvents() {
     loadCards(true);
   });
   
+  // Preset: $100+
+  document.getElementById("preset100")?.addEventListener("click", () => {
+    clearFilters();
+    document.getElementById("filterPriceMin").value = "100";
+    document.getElementById("filterSortBy").value = "price";
+    loadCards(true);
+  });
+  
+  // Preset: $500+
+  document.getElementById("preset500")?.addEventListener("click", () => {
+    clearFilters();
+    document.getElementById("filterPriceMin").value = "500";
+    document.getElementById("filterSortBy").value = "price";
+    loadCards(true);
+  });
+  
+  // Preset: $1000+
+  document.getElementById("preset1000")?.addEventListener("click", () => {
+    clearFilters();
+    document.getElementById("filterPriceMin").value = "1000";
+    document.getElementById("filterSortBy").value = "price";
+    loadCards(true);
+  });
+  
   // Preset: Flip Opportunities (high rarity, under $10)
   document.getElementById("presetFlipOpp")?.addEventListener("click", () => {
     clearFilters();
     document.getElementById("filterRarityMin").value = "60";
     document.getElementById("filterPriceMax").value = "10";
     document.getElementById("filterSortBy").value = "value_score";
-    loadCards(true);
-  });
-  
-  // Preset: Missing Images
-  document.getElementById("presetNoImage")?.addEventListener("click", () => {
-    clearFilters();
-    document.getElementById("filterHasImage").value = "false";
     loadCards(true);
   });
 
