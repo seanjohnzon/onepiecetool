@@ -188,6 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
   wireLotSearchEvents();
   wireAiChatEvents();
   restoreLotFromSession();
+  wireSavedLotsEvents();
   wireTopFlipsEvents();
 });
 
@@ -484,4 +485,223 @@ function renderTopFlips(cards, filters = {}) {
       ${card.market_url ? `<div class="links"><a href="${card.market_url}" target="_blank" rel="noreferrer">📈 View on PriceCharting</a></div>` : ""}
     </div>`;
   }).join("");
+}
+
+// =============================================================================
+// SAVED LOTS FUNCTIONALITY
+// =============================================================================
+
+function wireSavedLotsEvents() {
+  // Save lot button
+  document.getElementById("saveLotBtn")?.addEventListener("click", openSaveLotModal);
+  
+  // Modal buttons
+  document.getElementById("cancelSaveLot")?.addEventListener("click", closeSaveLotModal);
+  document.getElementById("confirmSaveLot")?.addEventListener("click", confirmSaveLot);
+  
+  // Refresh saved lots
+  document.getElementById("refreshLotsBtn")?.addEventListener("click", loadSavedLots);
+  
+  // Close modal on backdrop click
+  document.getElementById("saveLotModal")?.addEventListener("click", (e) => {
+    if (e.target.id === "saveLotModal") closeSaveLotModal();
+  });
+  
+  // Load saved lots on page load
+  loadSavedLots();
+}
+
+function openSaveLotModal() {
+  if (workingLot.length === 0) {
+    alert("Add some cards to your lot first!");
+    return;
+  }
+  
+  const modal = document.getElementById("saveLotModal");
+  const countEl = document.getElementById("modalLotCount");
+  const valueEl = document.getElementById("modalLotValue");
+  const nameInput = document.getElementById("saveLotName");
+  const descInput = document.getElementById("saveLotDesc");
+  
+  // Calculate lot totals
+  const totalValue = workingLot.reduce((sum, c) => sum + (c.price || 0), 0);
+  
+  // Update modal
+  if (countEl) countEl.textContent = workingLot.length;
+  if (valueEl) valueEl.textContent = "$" + totalValue.toFixed(2);
+  if (nameInput) nameInput.value = "";
+  if (descInput) descInput.value = "";
+  
+  if (modal) modal.style.display = "flex";
+}
+
+function closeSaveLotModal() {
+  const modal = document.getElementById("saveLotModal");
+  if (modal) modal.style.display = "none";
+}
+
+async function confirmSaveLot() {
+  const nameInput = document.getElementById("saveLotName");
+  const descInput = document.getElementById("saveLotDesc");
+  const confirmBtn = document.getElementById("confirmSaveLot");
+  
+  const name = nameInput?.value?.trim();
+  if (!name) {
+    alert("Please enter a name for your lot!");
+    nameInput?.focus();
+    return;
+  }
+  
+  // Disable button during save
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Saving...";
+  }
+  
+  try {
+    const cardIds = workingLot.map(c => c.id);
+    
+    const res = await fetch("/cards/saved-lots", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name,
+        description: descInput?.value?.trim() || null,
+        card_ids: cardIds
+      })
+    });
+    
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to save lot");
+    }
+    
+    const savedLot = await res.json();
+    
+    // Success! Close modal and refresh
+    closeSaveLotModal();
+    clearWorkingLot();
+    loadSavedLots();
+    
+    alert(`✅ Lot "${savedLot.name}" saved successfully!`);
+    
+  } catch (err) {
+    alert("Error saving lot: " + err.message);
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "💾 Save Lot";
+    }
+  }
+}
+
+async function loadSavedLots() {
+  const grid = document.getElementById("savedLotsGrid");
+  if (!grid) return;
+  
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--op-gray);">Loading saved lots...</div>';
+  
+  try {
+    const res = await fetch("/cards/saved-lots");
+    if (!res.ok) throw new Error("Failed to load lots");
+    
+    const lots = await res.json();
+    
+    if (lots.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--op-gray);">No saved lots yet. Build a lot and click "Save Lot" to save it!</div>';
+      return;
+    }
+    
+    grid.innerHTML = lots.map(lot => {
+      const date = new Date(lot.created_at).toLocaleDateString();
+      return `
+        <div class="saved-lot-card" data-lot-id="${lot.id}" style="background:linear-gradient(135deg,rgba(15,23,41,0.9),rgba(26,39,68,0.8));border:1px solid rgba(245,197,66,0.3);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:18px;font-weight:600;color:var(--op-gold);margin-bottom:8px;">${escapeHtml(lot.name)}</div>
+          ${lot.description ? '<div style="font-size:13px;color:var(--op-gray);margin-bottom:12px;line-height:1.4;">' + escapeHtml(lot.description) + '</div>' : ''}
+          <div class="flex" style="justify-content:space-between;padding-top:12px;border-top:1px solid rgba(245,197,66,0.2);">
+            <div>
+              <div style="font-size:20px;font-weight:700;color:var(--op-cream);">${lot.card_count}</div>
+              <div style="font-size:11px;color:var(--op-gray);">cards</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:20px;font-weight:700;color:var(--op-gold);">$${lot.total_value.toFixed(2)}</div>
+              <div style="font-size:11px;color:var(--op-gray);">${date}</div>
+            </div>
+          </div>
+          <div class="flex" style="gap:8px;margin-top:12px;">
+            <button class="load-lot-btn" data-lot-id="${lot.id}" style="flex:1;padding:8px;background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid #22c55e;border-radius:6px;cursor:pointer;">📥 Load</button>
+            <button class="delete-lot-btn" data-lot-id="${lot.id}" style="padding:8px 12px;background:rgba(220,38,38,0.2);color:#ef4444;border:1px solid #ef4444;border-radius:6px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+    
+    // Wire up buttons
+    grid.querySelectorAll(".load-lot-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        loadLotIntoWorking(parseInt(btn.dataset.lotId));
+      });
+    });
+    
+    grid.querySelectorAll(".delete-lot-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteSavedLot(parseInt(btn.dataset.lotId));
+      });
+    });
+    
+  } catch (err) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#ef4444;">Error loading lots: ' + err.message + '</div>';
+  }
+}
+
+async function loadLotIntoWorking(lotId) {
+  try {
+    const res = await fetch(`/cards/saved-lots/${lotId}`);
+    if (!res.ok) throw new Error("Failed to load lot");
+    
+    const lot = await res.json();
+    
+    // Clear current working lot and load this one
+    workingLot = lot.cards.map(c => ({
+      id: c.id,
+      card_name: c.card_name,
+      card_number: c.card_number,
+      variant: c.variant,
+      price: c.price,
+      image_url: c.image_url,
+      market_url: c.market_url,
+      flip_score: c.flip_score,
+      trend_score_sma: c.trend_score_sma,
+      addedAt: Date.now(),
+      reason: "Loaded from: " + lot.name
+    }));
+    
+    saveLotToSession();
+    renderWorkingLot();
+    
+    // Switch to show the lot
+    const countEl = document.getElementById("lotCount");
+    if (countEl) countEl.textContent = `(${workingLot.length} cards)`;
+    
+  } catch (err) {
+    alert("Error loading lot: " + err.message);
+  }
+}
+
+async function deleteSavedLot(lotId) {
+  if (!confirm("Are you sure you want to delete this saved lot? This cannot be undone.")) {
+    return;
+  }
+  
+  try {
+    const res = await fetch(`/cards/saved-lots/${lotId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Failed to delete lot");
+    
+    loadSavedLots();
+    
+  } catch (err) {
+    alert("Error deleting lot: " + err.message);
+  }
 }

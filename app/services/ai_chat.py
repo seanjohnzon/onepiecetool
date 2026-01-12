@@ -244,25 +244,29 @@ def chat_with_claude(
         conversation_history: Previous messages in the conversation.
         
     Returns:
-        dict with 'response' (Claude's reply) and 'error' (if any).
+        dict with 'response' (Claude's reply), 'error' (if any), and 'suggested_cards'.
     """
     client = get_anthropic_client()
     if not client:
         return {
             "response": None,
-            "error": "No API key configured. Please set ANTHROPIC_API_KEY environment variable."
+            "error": "No API key configured. Please set ANTHROPIC_API_KEY environment variable.",
+            "suggested_cards": []
         }
     
     # Get database context
     db_summary = get_database_summary(db)
-    relevant_cards = query_relevant_cards(db, user_message)
+    relevant_cards_text = query_relevant_cards(db, user_message)
+    
+    # Get actual card objects for suggestions
+    suggested_cards = get_suggested_cards(db, user_message)
     
     # Build context message
     context = f"""
 {db_summary}
 
 RELEVANT CARDS FOR THIS QUERY:
-{relevant_cards}
+{relevant_cards_text}
 """
     
     # Build messages array
@@ -280,7 +284,9 @@ RELEVANT CARDS FOR THIS QUERY:
     full_message = f"""Based on this database context:
 {context}
 
-User question: {user_message}"""
+User question: {user_message}
+
+IMPORTANT: When recommending specific cards, mention them by name and card number (e.g., "Monkey.D.Luffy (OP07-091)") so the user can add them to their lot."""
     
     messages.append({
         "role": "user",
@@ -297,15 +303,110 @@ User question: {user_message}"""
         
         return {
             "response": response.content[0].text,
-            "error": None
+            "error": None,
+            "suggested_cards": suggested_cards[:10]  # Limit to 10 suggestions
         }
     except Exception as e:
         # Log the error for debugging
         print(f"AI Chat Error: {e}")
         return {
             "response": f"AI Error: {str(e)}",
-            "error": str(e)
+            "error": str(e),
+            "suggested_cards": []
         }
+
+
+def get_suggested_cards(db: Session, user_message: str, limit: int = 10) -> list[dict]:
+    """
+    Get card objects to suggest based on user's query.
+    
+    Args:
+        db: Database session.
+        user_message: User's query.
+        limit: Max cards to return.
+        
+    Returns:
+        List of card dicts suitable for frontend display.
+    """
+    msg_lower = user_message.lower()
+    
+    # Build query conditions
+    conditions = []
+    order_by = "flip_score DESC"
+    
+    # Character filters
+    if "luffy" in msg_lower:
+        conditions.append("LOWER(card_name) LIKE '%luffy%'")
+    elif "zoro" in msg_lower:
+        conditions.append("LOWER(card_name) LIKE '%zoro%'")
+    elif "shanks" in msg_lower:
+        conditions.append("LOWER(card_name) LIKE '%shanks%'")
+    elif "ace" in msg_lower:
+        conditions.append("LOWER(card_name) LIKE '%ace%'")
+    elif "nami" in msg_lower:
+        conditions.append("LOWER(card_name) LIKE '%nami%'")
+    elif "law" in msg_lower or "trafalgar" in msg_lower:
+        conditions.append("(LOWER(card_name) LIKE '%law%' OR LOWER(card_name) LIKE '%trafalgar%')")
+    
+    # Variant filters
+    if "manga" in msg_lower:
+        conditions.append("LOWER(variant) LIKE '%manga%'")
+    elif "alternate art" in msg_lower or "alt art" in msg_lower:
+        conditions.append("LOWER(variant) LIKE '%alternate%'")
+    elif "promo" in msg_lower:
+        conditions.append("LOWER(variant) LIKE '%promo%'")
+    
+    # Query type
+    if "flip" in msg_lower or "undervalued" in msg_lower:
+        conditions.append("flip_score > 100")
+        order_by = "flip_score DESC"
+    elif "trending" in msg_lower or "rising" in msg_lower:
+        conditions.append("trend_score_sma > 0")
+        order_by = "trend_score_sma DESC"
+    elif "expensive" in msg_lower or "valuable" in msg_lower:
+        order_by = "price DESC"
+    elif "cheap" in msg_lower or "budget" in msg_lower:
+        conditions.append("price < 50")
+    
+    # Price range from message
+    if "$400" in msg_lower or "400 dollars" in msg_lower:
+        conditions.append("price BETWEEN 10 AND 100")
+    elif "$100" in msg_lower:
+        conditions.append("price >= 100")
+    elif "$500" in msg_lower:
+        conditions.append("price >= 500")
+    
+    # Ensure we have valid cards with prices
+    conditions.append("price > 0.5")
+    
+    where = " AND ".join(conditions) if conditions else "price > 0.5"
+    
+    query = f"""
+        SELECT id, card_name, card_number, variant, price, 
+               image_url, image_path, market_url, flip_score, trend_score_sma
+        FROM cards
+        WHERE {where}
+        ORDER BY {order_by}
+        LIMIT {limit}
+    """
+    
+    from sqlalchemy import text
+    results = db.execute(text(query)).fetchall()
+    
+    return [
+        {
+            "id": r[0],
+            "card_name": r[1],
+            "card_number": r[2],
+            "variant": r[3],
+            "price": r[4],
+            "image_url": r[5] or r[6],
+            "market_url": r[7],
+            "flip_score": r[8],
+            "trend_score_sma": r[9]
+        }
+        for r in results
+    ]
 
 
 def get_quick_analysis(db: Session, analysis_type: str) -> dict:

@@ -97,3 +97,42 @@ class ConfigLog(Base):
     new_value = Column(Float, nullable=False)
     reason = Column(Text, nullable=True)
     changed_at = Column(DateTime, nullable=False, server_default=func.now())
+
+
+class SavedLot(Base):
+    """
+    User-saved lots/portfolios for card collections.
+    
+    Allows users to save, name, and manage card lots for analysis.
+    """
+
+    __tablename__ = "saved_lots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(128), nullable=False)
+    description = Column(Text, nullable=True)
+    total_value = Column(Float, nullable=True)
+    card_count = Column(Integer, nullable=True, default=0)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+
+class SavedLotCard(Base):
+    """
+    Junction table linking cards to saved lots.
+    
+    Stores which cards belong to which lot, with optional quantity and notes.
+    """
+
+    __tablename__ = "saved_lot_cards"
+    __table_args__ = (
+        UniqueConstraint("lot_id", "card_id", name="uq_lot_card"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    lot_id = Column(Integer, nullable=False, index=True)
+    card_id = Column(Integer, nullable=False, index=True)
+    quantity = Column(Integer, nullable=False, default=1)
+    price_at_add = Column(Float, nullable=True)
+    notes = Column(Text, nullable=True)
+    added_at = Column(DateTime, nullable=False, server_default=func.now())

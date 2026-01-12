@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from .config import get_settings
-from .models import Base, PriceHistory, CalcConfig, ConfigLog
+from .models import Base, PriceHistory, CalcConfig, ConfigLog, SavedLot, SavedLotCard
 
 
 settings = get_settings()
@@ -62,7 +62,7 @@ def ensure_columns() -> None:
 
 def ensure_new_tables() -> None:
     """
-    Create new tables for price history and configuration.
+    Create new tables for price history, configuration, and saved lots.
     Safe to run multiple times - won't affect existing tables.
     """
     
@@ -71,6 +71,8 @@ def ensure_new_tables() -> None:
         PriceHistory.__table__,
         CalcConfig.__table__,
         ConfigLog.__table__,
+        SavedLot.__table__,
+        SavedLotCard.__table__,
     ])
 
 

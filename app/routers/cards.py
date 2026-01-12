@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..config import Settings, get_settings
 from ..database import get_db
-from ..models import Card
+from ..models import Card, SavedLot, SavedLotCard
 from ..schemas import (
     CardCreate,
     CardListResponse,
@@ -454,6 +454,232 @@ def get_filter_options(db: Session = Depends(get_db)) -> dict:
 
 
 # =============================================================================
+# SAVED LOTS ENDPOINTS
+# =============================================================================
+
+
+class SaveLotRequest(BaseModel):
+    """Request body for saving a lot."""
+    name: str
+    description: Optional[str] = None
+    card_ids: List[int]
+
+
+class SaveLotResponse(BaseModel):
+    """Response after saving a lot."""
+    id: int
+    name: str
+    description: Optional[str]
+    total_value: float
+    card_count: int
+    created_at: str
+
+
+class LotCardInfo(BaseModel):
+    """Card info within a lot."""
+    id: int
+    card_name: str
+    card_number: str
+    variant: Optional[str]
+    price: Optional[float]
+    image_url: Optional[str]
+    market_url: Optional[str]
+    flip_score: Optional[float]
+    trend_score_sma: Optional[float]
+
+
+class LotDetailResponse(BaseModel):
+    """Detailed lot response with cards."""
+    id: int
+    name: str
+    description: Optional[str]
+    total_value: float
+    card_count: int
+    created_at: str
+    cards: List[LotCardInfo]
+
+
+@router.post("/saved-lots", response_model=SaveLotResponse, status_code=status.HTTP_201_CREATED)
+def save_lot(
+    request: SaveLotRequest,
+    db: Session = Depends(get_db)
+) -> SaveLotResponse:
+    """
+    Save a new lot with cards.
+    
+    Args:
+        request: Lot name and card IDs.
+        db: Database session.
+        
+    Returns:
+        SaveLotResponse: Created lot details.
+    """
+    # Calculate total value
+    cards = db.query(Card).filter(Card.id.in_(request.card_ids)).all()
+    total_value = sum(c.price or 0 for c in cards)
+    
+    # Create lot
+    lot = SavedLot(
+        name=request.name,
+        description=request.description,
+        total_value=total_value,
+        card_count=len(cards)
+    )
+    db.add(lot)
+    db.flush()  # Get the ID
+    
+    # Add cards to lot
+    for card in cards:
+        lot_card = SavedLotCard(
+            lot_id=lot.id,
+            card_id=card.id,
+            price_at_add=card.price
+        )
+        db.add(lot_card)
+    
+    db.commit()
+    db.refresh(lot)
+    
+    return SaveLotResponse(
+        id=lot.id,
+        name=lot.name,
+        description=lot.description,
+        total_value=lot.total_value or 0,
+        card_count=lot.card_count or 0,
+        created_at=lot.created_at.isoformat()
+    )
+
+
+@router.get("/saved-lots", response_model=List[SaveLotResponse])
+def list_lots(db: Session = Depends(get_db)) -> List[SaveLotResponse]:
+    """
+    List all saved lots.
+    
+    Returns:
+        List of saved lots with summary info.
+    """
+    lots = db.query(SavedLot).order_by(SavedLot.updated_at.desc()).all()
+    return [
+        SaveLotResponse(
+            id=lot.id,
+            name=lot.name,
+            description=lot.description,
+            total_value=lot.total_value or 0,
+            card_count=lot.card_count or 0,
+            created_at=lot.created_at.isoformat()
+        )
+        for lot in lots
+    ]
+
+
+@router.get("/saved-lots/{lot_id}", response_model=LotDetailResponse)
+def get_lot(lot_id: int, db: Session = Depends(get_db)) -> LotDetailResponse:
+    """
+    Get a saved lot with all its cards.
+    
+    Args:
+        lot_id: ID of the lot to retrieve.
+        db: Database session.
+        
+    Returns:
+        LotDetailResponse: Lot with cards.
+    """
+    lot = db.query(SavedLot).filter(SavedLot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot not found")
+    
+    # Get cards in this lot
+    lot_cards = db.query(SavedLotCard).filter(SavedLotCard.lot_id == lot_id).all()
+    card_ids = [lc.card_id for lc in lot_cards]
+    cards = db.query(Card).filter(Card.id.in_(card_ids)).all()
+    
+    cards_info = [
+        LotCardInfo(
+            id=c.id,
+            card_name=c.card_name,
+            card_number=c.card_number,
+            variant=c.variant,
+            price=c.price,
+            image_url=c.image_url or c.image_path,
+            market_url=c.market_url,
+            flip_score=c.flip_score,
+            trend_score_sma=c.trend_score_sma
+        )
+        for c in cards
+    ]
+    
+    return LotDetailResponse(
+        id=lot.id,
+        name=lot.name,
+        description=lot.description,
+        total_value=lot.total_value or 0,
+        card_count=lot.card_count or 0,
+        created_at=lot.created_at.isoformat(),
+        cards=cards_info
+    )
+
+
+@router.delete("/saved-lots/{lot_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_lot(lot_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a saved lot.
+    
+    Args:
+        lot_id: ID of the lot to delete.
+        db: Database session.
+    """
+    lot = db.query(SavedLot).filter(SavedLot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot not found")
+    
+    # Delete lot cards first
+    db.query(SavedLotCard).filter(SavedLotCard.lot_id == lot_id).delete()
+    
+    # Delete lot
+    db.delete(lot)
+    db.commit()
+
+
+@router.patch("/saved-lots/{lot_id}", response_model=SaveLotResponse)
+def update_lot(
+    lot_id: int,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    db: Session = Depends(get_db)
+) -> SaveLotResponse:
+    """
+    Update a lot's name or description.
+    
+    Args:
+        lot_id: ID of the lot.
+        name: New name (optional).
+        description: New description (optional).
+        db: Database session.
+        
+    Returns:
+        Updated lot.
+    """
+    lot = db.query(SavedLot).filter(SavedLot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot not found")
+    
+    if name is not None:
+        lot.name = name
+    if description is not None:
+        lot.description = description
+    
+    db.commit()
+    db.refresh(lot)
+    
+    return SaveLotResponse(
+        id=lot.id,
+        name=lot.name,
+        description=lot.description,
+        total_value=lot.total_value or 0,
+        card_count=lot.card_count or 0,
+        created_at=lot.created_at.isoformat()
+    )
+# =============================================================================
 # CARD CRUD ENDPOINTS
 # =============================================================================
 
@@ -735,4 +961,5 @@ def ai_quick_analysis(
         dict: Analysis results.
     """
     return ai_service.get_quick_analysis(db, analysis_type)
+
 
