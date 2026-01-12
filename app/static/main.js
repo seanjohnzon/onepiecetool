@@ -190,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
   wireLotSearchEvents();
   wireAiChatEvents();
   restoreLotFromSession();
+  wireTopFlipsEvents();
 });
 
 // SYNC ALL FUNCTIONALITY
@@ -351,3 +352,130 @@ async function findCardByInfo(info) {
   try { const res = await fetch(`/cards?search=${encodeURIComponent(q)}&limit=5`); const data = await res.json(); return data.items?.find(c => c.card_number === info.card_number || c.card_name?.toLowerCase() === info.card_name?.toLowerCase()) || data.items?.[0]; } catch { return null; }
 }
 
+
+// =============================================================================
+// TOP FLIP OPPORTUNITIES
+// =============================================================================
+
+function wireTopFlipsEvents() {
+  const refreshBtn = document.getElementById("refreshFlipsBtn");
+  const trendSelect = document.getElementById("trendMethod");
+  const charSelect = document.getElementById("flipCharacter");
+  const variantSelect = document.getElementById("flipVariant");
+  const priceMinInput = document.getElementById("flipPriceMin");
+  const priceMaxInput = document.getElementById("flipPriceMax");
+  
+  if (refreshBtn) refreshBtn.addEventListener("click", loadTopFlips);
+  if (trendSelect) trendSelect.addEventListener("change", loadTopFlips);
+  if (charSelect) charSelect.addEventListener("change", loadTopFlips);
+  if (variantSelect) variantSelect.addEventListener("change", loadTopFlips);
+  if (priceMinInput) priceMinInput.addEventListener("change", loadTopFlips);
+  if (priceMaxInput) priceMaxInput.addEventListener("change", loadTopFlips);
+  
+  // Quick preset buttons
+  document.querySelectorAll(".flip-preset").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const char = btn.dataset.char || "";
+      const variant = btn.dataset.var || "";
+      
+      if (charSelect) charSelect.value = char;
+      if (variantSelect) variantSelect.value = variant;
+      
+      document.querySelectorAll(".flip-preset").forEach(b => {
+        b.style.background = "rgba(15, 23, 41, 0.8)";
+        b.style.borderColor = "rgba(245, 197, 66, 0.3)";
+      });
+      btn.style.background = "var(--op-gold)";
+      btn.style.borderColor = "var(--op-gold)";
+      
+      loadTopFlips();
+    });
+  });
+  
+  loadFlipFilterOptions();
+  loadTopFlips();
+}
+
+async function loadFlipFilterOptions() {
+  const charSelect = document.getElementById("flipCharacter");
+  if (!charSelect) return;
+  
+  try {
+    const res = await fetch("/cards/filter-options");
+    if (!res.ok) return;
+    
+    const data = await res.json();
+    const characters = data.characters || [];
+    
+    charSelect.innerHTML = '<option value="">All Characters</option>';
+    characters.forEach(c => {
+      charSelect.innerHTML += '<option value="' + c.value + '">' + c.label + '</option>';
+    });
+  } catch (err) {
+    console.error("Failed to load filter options:", err);
+  }
+}
+
+async function loadTopFlips() {
+  const grid = document.getElementById("topFlipsGrid");
+  const trendMethod = document.getElementById("trendMethod")?.value || "sma";
+  const character = document.getElementById("flipCharacter")?.value || "";
+  const variantType = document.getElementById("flipVariant")?.value || "";
+  const priceMin = document.getElementById("flipPriceMin")?.value || "";
+  const priceMax = document.getElementById("flipPriceMax")?.value || "";
+  
+  grid.innerHTML = '<div class="small">Loading top flip opportunities...</div>';
+  
+  let url = "/cards/top-flips?limit=10&trend_method=" + trendMethod;
+  if (character) url += "&character=" + encodeURIComponent(character);
+  if (variantType) url += "&variant_type=" + encodeURIComponent(variantType);
+  if (priceMin) url += "&price_min=" + encodeURIComponent(priceMin);
+  if (priceMax) url += "&price_max=" + encodeURIComponent(priceMax);
+  
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      grid.innerHTML = '<div class="small" style="color:#ef4444;">Failed to load flip opportunities.</div>';
+      return;
+    }
+    
+    const data = await res.json();
+    renderTopFlips(data.cards || [], data.filters || {});
+  } catch (err) {
+    grid.innerHTML = '<div class="small" style="color:#ef4444;">Error: ' + err.message + '</div>';
+  }
+}
+
+function renderTopFlips(cards, filters = {}) {
+  const grid = document.getElementById("topFlipsGrid");
+  
+  if (!cards.length) {
+    grid.innerHTML = '<div class="small" style="grid-column: 1/-1;">No flip opportunities found. Make sure flip scores are calculated.</div>';
+    return;
+  }
+  
+  grid.innerHTML = cards.map((card, idx) => {
+    const imgSrc = card.image_url || "/static/placeholder-card.svg";
+    const hasTrend = card.sma_30 || card.ema_30;
+    const trendLabel = hasTrend ? "w/ Trend" : "Static";
+    
+    return `
+    <div class="card-tile" style="border-left: 4px solid ${idx < 3 ? '#22c55e' : 'rgba(245,197,66,0.3)'};">
+      <div class="card-header">
+        <div>
+          <div style="font-weight:700;">#${idx + 1} ${card.card_name}</div>
+          <div class="small">${card.variant || "Base"}</div>
+        </div>
+        <div class="badge" style="background:rgba(34,197,94,0.2); color:#22c55e;">Score: ${card.total_score?.toFixed(1) || card.flip_score?.toFixed(1) || "—"}</div>
+      </div>
+      <div class="img-box" style="min-height:150px;">
+        <img src="${imgSrc}" alt="${card.card_name}" />
+      </div>
+      <div class="small">💰 Price: <strong>$${card.price?.toFixed(2) || "—"}</strong></div>
+      <div class="small">📈 Flip Score: ${card.flip_score?.toFixed(1) || "—"} (${trendLabel})</div>
+      ${card.sma_30 ? `<div class="small">📊 SMA(30): $${card.sma_30.toFixed(2)} | Trend: ${card.trend_score_sma?.toFixed(1) || "—"}</div>` : ""}
+      ${card.ema_30 ? `<div class="small">📊 EMA(30): $${card.ema_30.toFixed(2)} | Trend: ${card.trend_score_ema?.toFixed(1) || "—"}</div>` : ""}
+      ${card.market_url ? `<div class="links"><a href="${card.market_url}" target="_blank" rel="noreferrer">📈 View on PriceCharting</a></div>` : ""}
+    </div>`;
+  }).join("");
+}
