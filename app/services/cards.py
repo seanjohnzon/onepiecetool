@@ -559,14 +559,47 @@ def fetch_market_metadata(url: str, timeout: float = 10.0) -> dict:
     image_url = None
     price_value = None
     variant_value = None
+    
+    # List of invalid image URL patterns (tracking pixels, ads, etc.)
+    INVALID_IMAGE_PATTERNS = [
+        "ebayadservices.com",
+        "ebayrtm.com",
+        "tracking",
+        "pixel",
+        "1x1",
+        "spacer",
+        "blank",
+    ]
+    
+    def is_valid_image_url(url: str) -> bool:
+        """Check if URL is a valid image URL (not a tracking pixel)."""
+        if not url:
+            return False
+        url_lower = url.lower()
+        for pattern in INVALID_IMAGE_PATTERNS:
+            if pattern in url_lower:
+                return False
+        # Must be an actual image file or CDN
+        return any(ext in url_lower for ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif', 'images.pricecharting', 'storage.googleapis'])
 
     og_image = soup.find("meta", property="og:image")
-    if og_image and og_image.get("content"):
+    if og_image and og_image.get("content") and is_valid_image_url(og_image["content"]):
         image_url = og_image["content"]
+    
+    # Try to find image in the product area specifically
     if not image_url:
-        first_img = soup.find("img")
-        if first_img and first_img.get("src"):
-            image_url = first_img["src"]
+        # Look for product image specifically
+        product_img = soup.find("img", {"id": "product_image"}) or soup.find("img", class_="product-image")
+        if product_img and product_img.get("src") and is_valid_image_url(product_img["src"]):
+            image_url = product_img["src"]
+    
+    if not image_url:
+        # Look for any image from pricecharting's CDN
+        for img in soup.find_all("img"):
+            src = img.get("src", "")
+            if is_valid_image_url(src):
+                image_url = src
+                break
 
     # Try common price markers
     price_candidates = []
