@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from .config import get_settings
-from .models import Base, PriceHistory, CalcConfig, ConfigLog
+from .models import Base, PriceHistory, CalcConfig, ConfigLog, SavedLot
 
 
 settings = get_settings()
@@ -81,6 +81,7 @@ def ensure_new_tables() -> None:
         PriceHistory.__table__,
         CalcConfig.__table__,
         ConfigLog.__table__,
+        SavedLot.__table__,
     ])
 
 

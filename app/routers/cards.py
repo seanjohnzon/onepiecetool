@@ -8,9 +8,11 @@ import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
+import json
+
 from ..config import Settings, get_settings
 from ..database import get_db
-from ..models import Card
+from ..models import Card, SavedLot
 from ..schemas import (
     CardCreate,
     CardListResponse,
@@ -452,6 +454,73 @@ def get_filter_options(db: Session = Depends(get_db)) -> dict:
         "variant_types": variant_categories,
         "raw_variants": [r[0] for r in variants]  # All raw variants for reference
     }
+
+
+# =============================================================================
+# SAVED LOTS ENDPOINTS (must be before /{card_id} to match first)
+# =============================================================================
+
+
+@router.get("/saved-lots", response_model=list)
+def list_saved_lots(db: Session = Depends(get_db)) -> list:
+    """List all saved lots."""
+    lots = db.query(SavedLot).order_by(SavedLot.updated_at.desc()).all()
+    return [
+        {
+            "id": lot.id,
+            "name": lot.name,
+            "description": lot.description,
+            "total_value": lot.total_value,
+            "card_count": lot.card_count,
+            "card_ids": json.loads(lot.card_ids) if lot.card_ids else [],
+            "created_at": lot.created_at.isoformat() if lot.created_at else None,
+            "updated_at": lot.updated_at.isoformat() if lot.updated_at else None,
+        }
+        for lot in lots
+    ]
+
+
+@router.post("/saved-lots", response_model=dict)
+def create_saved_lot(
+    name: str = Query(..., description="Name for the lot"),
+    card_ids: List[int] = Query(..., description="List of card IDs"),
+    description: Optional[str] = Query(None, description="Optional description"),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Create a new saved lot."""
+    # Calculate total value
+    cards = db.query(Card).filter(Card.id.in_(card_ids)).all()
+    total_value = sum(c.price or 0 for c in cards)
+    
+    lot = SavedLot(
+        name=name,
+        description=description,
+        total_value=total_value,
+        card_count=len(card_ids),
+        card_ids=json.dumps(card_ids),
+    )
+    db.add(lot)
+    db.commit()
+    db.refresh(lot)
+    
+    return {
+        "id": lot.id,
+        "name": lot.name,
+        "total_value": lot.total_value,
+        "card_count": lot.card_count,
+        "message": "Lot saved successfully",
+    }
+
+
+@router.delete("/saved-lots/{lot_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_saved_lot(lot_id: int, db: Session = Depends(get_db)) -> Response:
+    """Delete a saved lot."""
+    lot = db.query(SavedLot).filter(SavedLot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot not found")
+    db.delete(lot)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # =============================================================================

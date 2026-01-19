@@ -121,3 +121,20 @@ class ConfigLog(Base):
     new_value = Column(Float, nullable=False)
     reason = Column(Text, nullable=True)
     changed_at = Column(DateTime, nullable=False, server_default=func.now())
+
+
+class SavedLot(Base):
+    """
+    Represents a saved collection of cards (a "lot").
+    """
+
+    __tablename__ = "saved_lots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    total_value = Column(Float, nullable=True)
+    card_count = Column(Integer, nullable=True)
+    card_ids = Column(Text, nullable=True)  # JSON array of card IDs
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
