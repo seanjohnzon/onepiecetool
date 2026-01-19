@@ -54,6 +54,16 @@ def ensure_columns() -> None:
             ("total_score_ema", "FLOAT"),
             ("flip_score", "FLOAT"),
             ("last_trend_calc", "DATE"),
+            # Supply/Demand columns for Golden Ratio
+            ("sales_volume_text", "VARCHAR(64)"),
+            ("sales_per_week", "FLOAT"),
+            ("active_listings", "INTEGER"),
+            ("price_change", "FLOAT"),
+            ("release_date", "DATE"),
+            ("supply_score", "FLOAT"),
+            ("demand_score", "FLOAT"),
+            ("golden_ratio_score", "FLOAT"),
+            ("last_market_sync", "DATETIME"),
         ]
         for col_name, col_type in new_cols:
             if col_name not in existing_cols:
