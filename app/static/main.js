@@ -73,10 +73,10 @@ function renderCards(items) {
       <div class="card-header"><div><div style="font-weight:700;">${item.card_name}</div><div class="small">${item.card_number} · ${item.set_code}</div></div><div class="badge">${item.variant || "Base"}</div></div>
       <div class="img-box"><img src="${imgSrc}" alt="Card image" /></div>
       <div class="small">Avg Price: <strong>$${item.price ?? "—"}</strong></div>
-      <div class="small">Rarity Score: ${item.rarity_score ?? "—"}</div>
-      <div class="small">Value Score: ${valueScoreText}</div>
-      <div class="small">Language: ${item.language || "English"}</div>
-      <div class="small">Priority: ${item.auto_priority_rank ?? "—"}</div>
+        <div class="small" style="color:#f5c542; font-weight:600;">🏆 Golden: ${item.golden_ratio_score ? item.golden_ratio_score.toFixed(1) : "—"}</div>
+        <div class="small">📦 Supply: ${item.supply_score ? item.supply_score.toFixed(0) : "—"} | 📈 Demand: ${item.demand_score ? item.demand_score.toFixed(0) : "—"}</div>
+        <div class="small">Sales/wk: ${item.sales_per_week ? item.sales_per_week.toFixed(1) : "—"} | Listings: ${item.active_listings ?? "—"}</div>
+        <div class="small">Rarity: ${item.rarity_score ?? "—"} | Value: ${valueScoreText}</div>
       ${leaderBtnHtml}
       ${item.market_url ? `<div class="links"><a href="${item.market_url}" target="_blank" rel="noreferrer">📈 View on PriceCharting</a></div>` : ""}
     </div>`;
