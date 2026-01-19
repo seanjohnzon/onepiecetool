@@ -47,19 +47,34 @@ class Card(Base):
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
-    # SMA/EMA trend analysis columns
-    sma_30 = Column(Float, nullable=True)
-    ema_30 = Column(Float, nullable=True)
-    trend_score_sma = Column(Float, nullable=True)
-    trend_score_ema = Column(Float, nullable=True)
-    total_score_sma = Column(Float, nullable=True)
-    total_score_ema = Column(Float, nullable=True)
-    flip_score = Column(Float, nullable=True)
-    last_trend_calc = Column(Date, nullable=True)
+    # SMA/EMA trend analysis columns (added for flip score enhancement)
+    sma_30 = Column(Float, nullable=True)  # 30-day Simple Moving Average
+    ema_30 = Column(Float, nullable=True)  # 30-day Exponential Moving Average
+    trend_score_sma = Column(Float, nullable=True)  # SMA-based trend score
+    trend_score_ema = Column(Float, nullable=True)  # EMA-based trend score
+    total_score_sma = Column(Float, nullable=True)  # Static + SMA trend
+    total_score_ema = Column(Float, nullable=True)  # Static + EMA trend
+    flip_score = Column(Float, nullable=True)  # Static flip score (our formula)
+    last_trend_calc = Column(Date, nullable=True)  # When trends were last calculated
+
+    # Supply/Demand data from PriceCharting (for Golden Ratio formula)
+    sales_volume_text = Column(String(64), nullable=True)  # Raw: "3 sales per week"
+    sales_per_week = Column(Float, nullable=True)  # Normalized: 3.0 (sales/week)
+    active_listings = Column(Integer, nullable=True)  # Supply: how many listed for sale
+    price_change = Column(Float, nullable=True)  # Recent price movement (+$X.XX)
+    release_date = Column(Date, nullable=True)  # Card/Set release date
+    supply_score = Column(Float, nullable=True)  # Calculated scarcity (0-100)
+    demand_score = Column(Float, nullable=True)  # Calculated demand (0-100)
+    golden_ratio_score = Column(Float, nullable=True)  # Final combined flip score
+    last_market_sync = Column(DateTime, nullable=True)  # When market data was last synced
 
 
 class PriceHistory(Base):
-    """Stores daily price snapshots for trend analysis."""
+    """
+    Stores daily price snapshots for trend analysis.
+    
+    Used to calculate SMA and EMA over time.
+    """
 
     __tablename__ = "price_history"
     __table_args__ = (
@@ -74,7 +89,12 @@ class PriceHistory(Base):
 
 
 class CalcConfig(Base):
-    """Configuration table for tunable calculation parameters."""
+    """
+    Configuration table for tunable calculation parameters.
+    
+    AI-managed, not exposed to users. Allows adjusting math
+    without code changes.
+    """
 
     __tablename__ = "calc_config"
 
@@ -87,7 +107,11 @@ class CalcConfig(Base):
 
 
 class ConfigLog(Base):
-    """Audit log for configuration changes."""
+    """
+    Audit log for configuration changes.
+    
+    Tracks what changed, when, and why for rollback capability.
+    """
 
     __tablename__ = "config_log"
 

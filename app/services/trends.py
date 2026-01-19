@@ -501,3 +501,206 @@ def update_all_flip_scores(db: Session) -> dict:
 
     db.commit()
     return {"updated": updated, "skipped": skipped, "characters": len(char_avgs)}
+
+
+# =============================================================================
+# GOLDEN RATIO FORMULA (Supply/Demand Based)
+# =============================================================================
+
+def calculate_supply_score(active_listings: Optional[int], sales_per_week: Optional[float]) -> float:
+    """
+    Calculate supply score (0-100) based on listings and sales velocity.
+    
+    Low listings + high sales = scarce (high score)
+    High listings + low sales = abundant (low score)
+    
+    Args:
+        active_listings: Number of cards listed for sale.
+        sales_per_week: Normalized sales per week.
+    
+    Returns:
+        Supply score (0-100).
+    """
+    if active_listings is None:
+        # Without listing data, use sales frequency as proxy
+        if sales_per_week and sales_per_week >= 7:
+            active_listings = 100  # High sales = probably abundant
+        elif sales_per_week and sales_per_week >= 3:
+            active_listings = 50
+        else:
+            active_listings = 30
+    
+    if sales_per_week is None:
+        sales_per_week = 1.0
+    
+    # Fewer listings = higher score (scarcer)
+    listings_score = max(0, 50 - (active_listings / 2))
+    
+    # More sales = selling out faster = scarcer
+    sales_score = min(50, sales_per_week * 3)
+    
+    return round(listings_score + sales_score, 2)
+
+
+def calculate_demand_score(sales_per_week: Optional[float], price: Optional[float]) -> float:
+    """
+    Calculate demand score (0-100) based on sales velocity and price.
+    
+    High sales + higher price = strong demand
+    Low sales + low price = weak demand
+    
+    Args:
+        sales_per_week: Normalized sales per week.
+        price: Current card price.
+    
+    Returns:
+        Demand score (0-100).
+    """
+    if sales_per_week is None:
+        sales_per_week = 0.5
+    if price is None or price <= 0:
+        price = 1.0
+    
+    # Base: sales per week (0-50)
+    base_score = min(50, sales_per_week * 7)
+    
+    # Price bonus for expensive cards with actual sales
+    if price >= 100 and sales_per_week >= 1:
+        price_bonus = min(30, (sales_per_week / 3) * 20)
+    elif price >= 50 and sales_per_week >= 1:
+        price_bonus = min(20, (sales_per_week / 3) * 15)
+    elif price >= 20 and sales_per_week >= 1:
+        price_bonus = min(10, (sales_per_week / 3) * 10)
+    else:
+        price_bonus = 0
+    
+    return round(base_score + price_bonus, 2)
+
+
+def calculate_golden_ratio_score(
+    price: float,
+    rarity_score: float,
+    supply_score: float,
+    demand_score: float,
+    character_name: str,
+    variant: Optional[str] = None,
+    price_change: Optional[float] = None
+) -> float:
+    """
+    Calculate the Golden Ratio score for flip opportunity detection.
+    
+    Combines rarity, supply/demand, character premium, variant type,
+    and price tier to find undervalued cards with good flip potential.
+    
+    Args:
+        price: Current card price.
+        rarity_score: Rarity score (0-100).
+        supply_score: Supply score (0-100).
+        demand_score: Demand score (0-100).
+        character_name: Character name for premium calculation.
+        variant: Variant type for type multiplier.
+        price_change: Recent price movement.
+    
+    Returns:
+        Golden ratio score (higher = better flip opportunity).
+    """
+    # Character tiers (popularity multiplier)
+    char_lower = character_name.lower()
+    if any(c in char_lower for c in ["luffy", "monkey.d.luffy"]):
+        char_mult = 1.12
+    elif any(c in char_lower for c in ["shanks", "zoro", "roronoa", "nami", "boa hancock"]):
+        char_mult = 1.08
+    elif any(c in char_lower for c in ["ace", "sabo", "law", "trafalgar", "kaido", "big mom"]):
+        char_mult = 1.05
+    elif any(c in char_lower for c in ["sanji", "robin", "chopper", "yamato", "uta"]):
+        char_mult = 1.03
+    else:
+        char_mult = 1.0
+    
+    # Variant type multiplier
+    var_lower = (variant or "").lower()
+    if "sp" in var_lower and "leader" not in var_lower:
+        var_mult = 1.15  # SP cards get bonus
+    elif "manga" in var_lower:
+        var_mult = 0.7   # Manga cards penalized (controversial, volatile)
+    elif "alt" in var_lower or "alternate" in var_lower:
+        var_mult = 1.08
+    elif "wanted" in var_lower or "anniv" in var_lower:
+        var_mult = 1.10
+    elif "promo" in var_lower or "winner" in var_lower:
+        var_mult = 1.05
+    else:
+        var_mult = 1.0  # Base/common
+    
+    # Price tier bonus (sweet spot detection)
+    if 15 <= price <= 50:
+        price_tier = 1.12  # Best flip range
+    elif 50 < price <= 150:
+        price_tier = 1.08  # Good flip range
+    elif 150 < price <= 500:
+        price_tier = 1.0   # Moderate
+    elif price > 500:
+        price_tier = 0.80  # Liquidity penalty
+    else:
+        price_tier = 0.90  # Too cheap
+    
+    # Momentum bonus
+    if price_change and price > 0 and price_change > 0:
+        momentum = 1 + min(0.08, price_change / price * 0.4)
+    elif price_change and price > 0 and price_change < 0:
+        momentum = max(0.92, 1 + price_change / price * 0.2)
+    else:
+        momentum = 1.0
+    
+    # Core formula
+    # Weights: Rarity 35%, Supply 20%, Demand 25%, Base 20%
+    base_score = (
+        (rarity_score * 0.35) +
+        (supply_score * 0.20) +
+        (demand_score * 0.25) +
+        (20)  # Base floor
+    )
+    
+    # Apply all multipliers
+    final_score = base_score * char_mult * var_mult * price_tier * momentum
+    
+    return round(final_score, 2)
+
+
+def update_golden_ratio_scores(db: Session) -> dict:
+    """
+    Update golden ratio scores for all cards.
+    
+    Args:
+        db: Database session.
+    
+    Returns:
+        Summary statistics.
+    """
+    cards = db.query(Card).filter(Card.price > 0).all()
+    
+    updated = 0
+    skipped = 0
+    
+    for card in cards:
+        rarity = card.rarity_score if card.rarity_score else 40
+        
+        supply = calculate_supply_score(card.active_listings, card.sales_per_week)
+        demand = calculate_demand_score(card.sales_per_week, card.price)
+        golden = calculate_golden_ratio_score(
+            price=card.price,
+            rarity_score=rarity,
+            supply_score=supply,
+            demand_score=demand,
+            character_name=card.card_name,
+            variant=card.variant,
+            price_change=card.price_change
+        )
+        
+        card.supply_score = supply
+        card.demand_score = demand
+        card.golden_ratio_score = golden
+        updated += 1
+    
+    db.commit()
+    return {"updated": updated, "skipped": skipped}

@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from .config import Settings, get_settings
 from .database import engine, init_database
 from .models import Base
-from .routers import cards
+from .routers import cards, scheduler
 
 
 # Load environment variables from .env file
@@ -19,6 +19,7 @@ app = FastAPI(title="One Piece TCG Tracker", version="0.1.0")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 app.mount("/media", StaticFiles(directory=str(BASE_DIR.parent / "storage")), name="media")
 app.include_router(cards.router)
+app.include_router(scheduler.router)
 
 
 @app.on_event("startup")
