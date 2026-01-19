@@ -303,7 +303,7 @@ def update_config(
 @router.get("/top-flips", response_model=dict)
 def get_top_flips(
     limit: int = Query(20, ge=1, le=100),
-    trend_method: str = Query("sma", description="Trend method: sma or ema"),
+    trend_method: str = Query("sma", description="Trend method: sma or ema (legacy, now uses golden_ratio)"),
     character: Optional[str] = Query(None, description="Filter by character name"),
     variant_type: Optional[str] = Query(None, description="Filter by variant type (AA, SP, Promo, etc)"),
     price_min: Optional[float] = Query(None, ge=0, description="Minimum price filter"),
@@ -311,28 +311,27 @@ def get_top_flips(
     db: Session = Depends(get_db)
 ) -> dict:
     """
-    Get top flip opportunities with optional filters.
+    Get top flip opportunities using the Golden Ratio score.
     
-    Uses total score (flip + trend) when available, falls back to flip_score.
+    The Golden Ratio score combines supply, demand, character premium,
+    rarity, and price tier analysis to find the best flip opportunities.
     
     Args:
         limit: Number of results.
-        trend_method: 'sma' or 'ema' for trend calculation.
+        trend_method: Legacy param (kept for compatibility).
         character: Filter by character name (partial match).
         variant_type: Filter by variant type.
         price_min: Minimum price.
         price_max: Maximum price.
         
     Returns:
-        dict: Top flip opportunities.
+        dict: Top flip opportunities ranked by golden_ratio_score.
     """
     from sqlalchemy import text
     
-    # Use total_score based on trend method, fallback to flip_score
-    score_col = "total_score_sma" if trend_method == "sma" else "total_score_ema"
-    
     # Build WHERE clause with optional filters
-    where_clauses = ["flip_score IS NOT NULL AND flip_score > 0"]
+    # Prioritize golden_ratio_score, fallback to flip_score for older data
+    where_clauses = ["(golden_ratio_score IS NOT NULL OR flip_score IS NOT NULL)", "price > 1"]
     params = {"limit": limit}
     
     if character:
@@ -356,16 +355,16 @@ def get_top_flips(
     
     where_sql = " AND ".join(where_clauses)
     
-    # Query top cards - use COALESCE to fall back to flip_score if no trend
+    # Query top cards - use golden_ratio_score, fallback to flip_score
     results = db.execute(
         text(f"""
-            SELECT id, card_name, variant, price, flip_score,
-                sma_30, ema_30, trend_score_sma, trend_score_ema,
-                COALESCE({score_col}, flip_score) as total_score, 
-                image_url, market_url
+            SELECT id, card_name, card_number, variant, price,
+                golden_ratio_score, supply_score, demand_score,
+                sales_per_week, active_listings, rarity_score,
+                flip_score, image_url, market_url
             FROM cards
             WHERE {where_sql}
-            ORDER BY COALESCE({score_col}, flip_score) DESC
+            ORDER BY COALESCE(golden_ratio_score, flip_score, 0) DESC
             LIMIT :limit
         """),
         params
@@ -376,20 +375,22 @@ def get_top_flips(
         cards.append({
             "id": r[0],
             "card_name": r[1],
-            "variant": r[2],
-            "price": r[3],
-            "flip_score": r[4],
-            "sma_30": r[5],
-            "ema_30": r[6],
-            "trend_score_sma": r[7],
-            "trend_score_ema": r[8],
-            "total_score": r[9],
-            "image_url": r[10],
-            "market_url": r[11],
+            "card_number": r[2],
+            "variant": r[3],
+            "price": r[4],
+            "golden_ratio_score": r[5],
+            "supply_score": r[6],
+            "demand_score": r[7],
+            "sales_per_week": r[8],
+            "active_listings": r[9],
+            "rarity_score": r[10],
+            "flip_score": r[11],  # Legacy fallback
+            "image_url": r[12],
+            "market_url": r[13],
         })
     
     return {
-        "method": trend_method,
+        "method": "golden_ratio",
         "filters": {"character": character, "variant_type": variant_type},
         "count": len(cards),
         "cards": cards

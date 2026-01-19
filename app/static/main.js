@@ -504,14 +504,17 @@ function renderTopFlips(cards, filters = {}) {
   const grid = document.getElementById("topFlipsGrid");
   
   if (!cards.length) {
-    grid.innerHTML = '<div class="small" style="grid-column: 1/-1;">No flip opportunities found. Make sure flip scores are calculated.</div>';
+    grid.innerHTML = '<div class="small" style="grid-column: 1/-1;">No flip opportunities found. Run sync to populate golden ratio scores.</div>';
     return;
   }
   
   grid.innerHTML = cards.map((card, idx) => {
     const imgSrc = card.image_url || "/static/placeholder-card.svg";
-    const hasTrend = card.sma_30 || card.ema_30;
-    const trendLabel = hasTrend ? "w/ Trend" : "Static";
+    const goldenScore = card.golden_ratio_score ? card.golden_ratio_score.toFixed(1) : (card.flip_score ? card.flip_score.toFixed(1) : "—");
+    const supplyScore = card.supply_score ? card.supply_score.toFixed(0) : "—";
+    const demandScore = card.demand_score ? card.demand_score.toFixed(0) : "—";
+    const salesWk = card.sales_per_week ? card.sales_per_week.toFixed(1) : "—";
+    const listings = card.active_listings ?? "—";
     
     return `
     <div class="card-tile" style="border-left: 4px solid ${idx < 3 ? '#22c55e' : 'rgba(245,197,66,0.3)'};">
@@ -520,15 +523,15 @@ function renderTopFlips(cards, filters = {}) {
           <div style="font-weight:700;">#${idx + 1} ${card.card_name}</div>
           <div class="small">${card.variant || "Base"}</div>
         </div>
-        <div class="badge" style="background:rgba(34,197,94,0.2); color:#22c55e;">Score: ${card.total_score?.toFixed(1) || card.flip_score?.toFixed(1) || "—"}</div>
+        <div class="badge" style="background:rgba(245,197,66,0.2); color:#f5c542;">🏆 ${goldenScore}</div>
       </div>
       <div class="img-box" style="min-height:150px;">
         <img src="${imgSrc}" alt="${card.card_name}" />
       </div>
       <div class="small">💰 Price: <strong>$${card.price?.toFixed(2) || "—"}</strong></div>
-      <div class="small">📈 Flip Score: ${card.flip_score?.toFixed(1) || "—"} (${trendLabel})</div>
-      ${card.sma_30 ? `<div class="small">📊 SMA(30): $${card.sma_30.toFixed(2)} | Trend: ${card.trend_score_sma?.toFixed(1) || "—"}</div>` : ""}
-      ${card.ema_30 ? `<div class="small">📊 EMA(30): $${card.ema_30.toFixed(2)} | Trend: ${card.trend_score_ema?.toFixed(1) || "—"}</div>` : ""}
+      <div class="small" style="color:#f5c542; font-weight:600;">📦 Supply: ${supplyScore} | 📈 Demand: ${demandScore}</div>
+      <div class="small">Sales/wk: ${salesWk} | Listings: ${listings}</div>
+      <div class="small">Rarity: ${card.rarity_score ?? "—"}</div>
       ${card.market_url ? `<div class="links"><a href="${card.market_url}" target="_blank" rel="noreferrer">📈 View on PriceCharting</a></div>` : ""}
     </div>`;
   }).join("");
