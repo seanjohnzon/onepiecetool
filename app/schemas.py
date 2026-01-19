@@ -82,6 +82,22 @@ class CardRead(CardBase):
     language: Optional[str] = Field(None, description="Card language (e.g., English, Japanese)")
     created_at: datetime
     updated_at: datetime
+    
+    # Trend analysis fields
+    flip_score: Optional[float] = Field(None, description="Static flip score")
+    sma_30: Optional[float] = Field(None, description="30-day Simple Moving Average")
+    ema_30: Optional[float] = Field(None, description="30-day Exponential Moving Average")
+    trend_score_sma: Optional[float] = Field(None, description="SMA-based trend score")
+    trend_score_ema: Optional[float] = Field(None, description="EMA-based trend score")
+    
+    # Supply/Demand fields (Golden Ratio)
+    sales_volume_text: Optional[str] = Field(None, description="Raw sales volume text")
+    sales_per_week: Optional[float] = Field(None, description="Normalized sales per week")
+    active_listings: Optional[int] = Field(None, description="Number of active listings")
+    price_change: Optional[float] = Field(None, description="Recent price change")
+    supply_score: Optional[float] = Field(None, description="Calculated supply score (0-100)")
+    demand_score: Optional[float] = Field(None, description="Calculated demand score (0-100)")
+    golden_ratio_score: Optional[float] = Field(None, description="Golden ratio flip opportunity score")
 
     model_config = ConfigDict(from_attributes=True)
 
