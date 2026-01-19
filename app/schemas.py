@@ -73,6 +73,14 @@ class CardUpdate(BaseModel):
     language: Optional[str] = None
 
 
+class SaveLotRequest(BaseModel):
+    """Request model for saving a lot."""
+
+    name: str
+    card_ids: list[int]
+    description: Optional[str] = None
+
+
 class CardRead(CardBase):
     """Response model for card data."""
 

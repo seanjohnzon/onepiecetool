@@ -408,3 +408,45 @@ def test_rarity_mapping_and_value_score(tmp_path):
     assert data_value["rarity_score"] == 90.0
     assert data_value["value_score"] == 0.9  # 90/100 = 0.9
 
+
+def test_saved_lot_crud(tmp_path):
+    """
+    Expected: saved lots can be created, listed, and deleted.
+    """
+    client = build_test_app(tmp_path)
+    card_one = client.post("/cards", json={"set_code": "OP-05", "card_name": "Nami", "card_number": "OP05-100"}).json()
+    card_two = client.post("/cards", json={"set_code": "OP-05", "card_name": "Zoro", "card_number": "OP05-101"}).json()
+
+    create_res = client.post(
+        "/cards/saved-lots",
+        json={"name": "Test Lot", "card_ids": [card_one["id"], card_two["id"]]},
+    )
+    assert create_res.status_code == 200
+    lot_id = create_res.json()["id"]
+
+    list_res = client.get("/cards/saved-lots")
+    assert list_res.status_code == 200
+    payload = list_res.json()
+    assert len(payload) == 1
+    assert payload[0]["name"] == "Test Lot"
+    assert payload[0]["card_count"] == 2
+
+    delete_res = client.delete(f"/cards/saved-lots/{lot_id}")
+    assert delete_res.status_code == 204
+
+    list_after = client.get("/cards/saved-lots")
+    assert list_after.status_code == 200
+    assert list_after.json() == []
+
+
+def test_sort_by_golden_ratio_fields(tmp_path):
+    """
+    Edge: sorting by golden_ratio_score, supply_score, and demand_score works.
+    """
+    client = build_test_app(tmp_path)
+    client.post("/cards", json={"set_code": "OP-05", "card_name": "Nami", "card_number": "OP05-100"})
+
+    for sort_by in ["golden_ratio_score", "supply_score", "demand_score"]:
+        res = client.get("/cards", params={"sort_by": sort_by})
+        assert res.status_code == 200
+

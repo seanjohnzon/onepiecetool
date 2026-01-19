@@ -18,6 +18,7 @@ from ..schemas import (
     CardListResponse,
     CardRead,
     CardUpdate,
+    SaveLotRequest,
 )
 from ..services import cards as card_service
 from ..services import trends as trend_service
@@ -463,7 +464,15 @@ def get_filter_options(db: Session = Depends(get_db)) -> dict:
 
 @router.get("/saved-lots", response_model=list)
 def list_saved_lots(db: Session = Depends(get_db)) -> list:
-    """List all saved lots."""
+    """
+    List all saved lots.
+
+    Args:
+        db (Session): Database session dependency.
+
+    Returns:
+        list: Saved lots with card IDs and totals.
+    """
     lots = db.query(SavedLot).order_by(SavedLot.updated_at.desc()).all()
     return [
         {
@@ -481,40 +490,52 @@ def list_saved_lots(db: Session = Depends(get_db)) -> list:
 
 
 @router.post("/saved-lots", response_model=dict)
-def create_saved_lot(
-    name: str = Query(..., description="Name for the lot"),
-    card_ids: List[int] = Query(..., description="List of card IDs"),
-    description: Optional[str] = Query(None, description="Optional description"),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Create a new saved lot."""
-    # Calculate total value
-    cards = db.query(Card).filter(Card.id.in_(card_ids)).all()
+def create_saved_lot(lot: SaveLotRequest, db: Session = Depends(get_db)) -> dict:
+    """
+    Create a new saved lot.
+
+    Args:
+        lot (SaveLotRequest): Lot details and card IDs.
+        db (Session): Database session dependency.
+
+    Returns:
+        dict: Summary of created lot.
+    """
+    cards = db.query(Card).filter(Card.id.in_(lot.card_ids)).all()
     total_value = sum(c.price or 0 for c in cards)
-    
-    lot = SavedLot(
-        name=name,
-        description=description,
+
+    saved = SavedLot(
+        name=lot.name,
+        description=lot.description,
         total_value=total_value,
-        card_count=len(card_ids),
-        card_ids=json.dumps(card_ids),
+        card_count=len(lot.card_ids),
+        card_ids=json.dumps(lot.card_ids),
     )
-    db.add(lot)
+    db.add(saved)
     db.commit()
-    db.refresh(lot)
-    
+    db.refresh(saved)
+
     return {
-        "id": lot.id,
-        "name": lot.name,
-        "total_value": lot.total_value,
-        "card_count": lot.card_count,
+        "id": saved.id,
+        "name": saved.name,
+        "total_value": saved.total_value,
+        "card_count": saved.card_count,
         "message": "Lot saved successfully",
     }
 
 
 @router.delete("/saved-lots/{lot_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_saved_lot(lot_id: int, db: Session = Depends(get_db)) -> Response:
-    """Delete a saved lot."""
+    """
+    Delete a saved lot.
+
+    Args:
+        lot_id (int): Lot identifier.
+        db (Session): Database session dependency.
+
+    Returns:
+        Response: 204 response on success.
+    """
     lot = db.query(SavedLot).filter(SavedLot.id == lot_id).first()
     if not lot:
         raise HTTPException(status_code=404, detail="Lot not found")

@@ -462,6 +462,9 @@ def list_cards(
     # Sorting
     sort_column_map = {
         "price": Card.price,
+        "golden_ratio_score": Card.golden_ratio_score,
+        "supply_score": Card.supply_score,
+        "demand_score": Card.demand_score,
         "rarity_score": Card.rarity_score,
         "value_score": Card.value_score,
         "name": Card.card_name,
